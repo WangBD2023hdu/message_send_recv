@@ -82,7 +82,6 @@ static void* client_handler(void * arg) {
     bzero(nick,256);
     pthread_mutex_lock(&mtx);
     int sockfd = clients[cell];
-    char flag = is_active[cell];
     pthread_mutex_unlock(&mtx);
     while(1){
         if( recv(sockfd, &nick_len, sizeof(char), 0) <= 0){
@@ -115,6 +114,7 @@ static void* client_handler(void * arg) {
     return NULL;
 }
 void handdle(int signal){
+    printf("%d", signal);
     return ;
 }
 int main(int argc, char *argv[]) {
