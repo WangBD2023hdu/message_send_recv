@@ -97,7 +97,6 @@ char send_message(int sockfd, char *nickname, char *text) {
 }
 
 int main(int argc, char *argv[]) {
-  printf("test");
   int sockfd = 0;
   char *nickname = NULL;
   uint16_t portno = 0;
@@ -151,7 +150,6 @@ int main(int argc, char *argv[]) {
   /* Now ask for a message from the user, this message
    * will be read by server
    */
-  printf("work normal");
   pthread_t thread_id;
   if (pthread_create(&thread_id, NULL, server_handler, &sockfd) != 0) {
     perror("ERROR thread create");
@@ -161,16 +159,16 @@ int main(int argc, char *argv[]) {
   while (1) {
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-    while (strcmp(buffer, "m\n") != 0) {
-      if (strcmp(buffer, "exit\n") == 0) {
-        close(sockfd);
-        return 0;
-      }
+    // while (strcmp(buffer, "m\n") != 0) {
+    //   if (strcmp(buffer, "exit\n") == 0) {
+    //     close(sockfd);
+    //     return 0;
+    //   }
 
-      printf("Invalid input\n");
-      bzero(buffer, 256);
-      fgets(buffer, 200, stdin);
-    }
+    //   printf("Invalid input\n");
+    //   bzero(buffer, 256);
+    //   fgets(buffer, 200, stdin);
+    // }
 
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
