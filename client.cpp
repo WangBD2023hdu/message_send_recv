@@ -15,7 +15,7 @@ pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
 char is_input_mode;
 
 char force_read(int sockfd, char *buffer, int len) {
-    char size = (char)len;
+
     int nLen;
 	nLen = (int)recv(sockfd, buffer, len, 0);
     if (nLen <= 0)
@@ -44,7 +44,7 @@ static void* server_handler(void * arg) {
     int sockfd_ = *(int*)arg;
     char nick[256]={};
     char message[256]={};
-    char total[512]={};
+
     bzero(message, 256);
     while(1){
         if('0'==read_message(sockfd_, nick)){
@@ -74,7 +74,7 @@ static void* server_handler(void * arg) {
 
 
 char force_send(int sockfd, char *buffer, int len) {
-    int n = len;
+
     if(-1 == send(sockfd, buffer, len, 0)){
         return 'F';
     }
@@ -84,7 +84,7 @@ char force_send(int sockfd, char *buffer, int len) {
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
-    char len= strlen(nickname) + 1 + strlen(text) + 1;
+    
     char nick_len = strlen(nickname) + 1;
     char text_len = strlen(text) + 1;
     if('F'==force_send(sockfd, &nick_len, sizeof(char))){
