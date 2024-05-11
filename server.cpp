@@ -23,11 +23,11 @@ static inline int reserve_socket_cell() {
   if (count_active_clients > MAX_COUNT_CLIENTS) {
     return -1;
   }
-  int i = 0;
+  int i = 1;
   while (clients[i] && i < MAX_COUNT_CLIENTS) {
     ++i;
   }
-  is_active[i] = 1;  // TODO
+  is_active[i] = i;  // TODO
   pthread_mutex_unlock(&mtx);
   return i;
 }
@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     pthread_mutex_unlock(&mtx);
     pthread_t thread_id;
 
-    if (pthread_create(&thread_id, NULL, client_handler, (void*)&cell) != 0) {
+    if (pthread_create(&thread_id, NULL, client_handler, (void*)(is_active+cell)) != 0) {
       continue;
     }
 
