@@ -4,74 +4,197 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include <string.h>
 
+#include <signal.h>
+#define MAX_COUNT_CLIENTS 100
+
+int clients[MAX_COUNT_CLIENTS];
+char is_active[MAX_COUNT_CLIENTS];
+int count_active_clients;
+
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+
+static inline int reserve_socket_cell() {
+    pthread_mutex_lock(&mtx);
+    count_active_clients++;
+    if(count_active_clients>MAX_COUNT_CLIENTS){
+        return -1;
+    }
+    int i=0;
+    while(clients[i] && i<MAX_COUNT_CLIENTS){
+        ++i;
+    }
+    is_active[i] = 1; // TODO 
+    pthread_mutex_unlock(&mtx);
+    return i;
+}
+
+static inline void free_socket_cell(int cell) {
+/**
+ * free the clients and is_activearray cells
+ */
+
+    pthread_mutex_lock(&mtx);
+    count_active_clients--;
+    close(clients[cell]);
+    is_active[cell] = 0; // TODO 
+    pthread_mutex_unlock(&mtx);
+}
+
+static inline void notify_all(char *buffer, char message_len, int skip) {
+/** 
+ * send the message to every active client
+ */
+	int i=0;
+    int sockfd;
+    char flag;
+	for(; i<MAX_COUNT_CLIENTS; ++i){
+        if(i==skip) continue;
+        pthread_mutex_lock(&mtx);
+        flag = is_active[i];
+        sockfd = clients[i];
+        pthread_mutex_unlock(&mtx);
+        if(flag){
+            if (send(sockfd, &message_len, sizeof(char), 0) == -1)
+                perror("send message len error");
+
+            if (send(sockfd, buffer, (int)message_len, 0) == -1)
+                perror("send message error");
+        }
+        
+    }
+
+}
+
+static void* client_handler(void * arg) {
+/** 
+ * get message from client and to notify all other clients.
+*/
+    int cell = *(int*)arg;
+    char nick[256];
+    char message[256];
+    char nick_len;
+    char message_len;
+    bzero(message, 256);
+    bzero(nick,256);
+    pthread_mutex_lock(&mtx);
+    int sockfd = clients[cell];
+    char flag = is_active[cell];
+    pthread_mutex_unlock(&mtx);
+    while(1){
+        if( recv(sockfd, &nick_len, sizeof(char), 0) <= 0){
+            free_socket_cell(cell);
+            
+            perror("error");
+            break;
+        }
+        if( recv(sockfd, nick, (int)nick_len, 0) <=0 ){
+            free_socket_cell(cell);
+            perror("error");
+            break;
+        }
+        if( recv(sockfd, &message_len, sizeof(char), 0) <=0 ){
+            free_socket_cell(cell);
+
+            perror("error");
+            break;
+        }  
+        if(  recv(sockfd, message, (int)message_len, 0) <=0 ){
+            free_socket_cell(cell);
+            perror("error");
+            break;
+        } 
+
+        notify_all(nick, nick_len, cell);
+        notify_all(message, message_len, cell);
+            
+    }
+    return NULL;
+}
+void handdle(int signal){
+    return ;
+}
 int main(int argc, char *argv[]) {
-  (void)argc;
-  (void)argv;
-  int sockfd, newsockfd;
-  uint16_t portno;
-  unsigned int clilen;
-  char buffer[256];
-  struct sockaddr_in serv_addr, cli_addr;
-  ssize_t n;
+    signal(SIGPIPE, handdle);
+    int sockfd, newsockfd;
+    uint16_t portno;
+    unsigned int clilen;
+    struct sockaddr_in serv_addr, cli_addr;
+    (void)argc;
+    (void)argv;
 
-  /* First call to socket() function */
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    /* First call to socket() function */
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-  if (sockfd < 0) {
-    perror("ERROR opening socket");
-    exit(1);
-  }
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        return 1;
+    }
 
-  /* Initialize socket structure */
-  bzero((char *)&serv_addr, sizeof(serv_addr));
-  portno = 5001;
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s port\n", argv[0]);
+        exit(0);
+    }
 
-  serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = INADDR_ANY;
-  serv_addr.sin_port = htons(portno);
+    portno = (uint16_t) atoi(argv[1]);
 
-  /* Now bind the host address using bind() call.*/
-  if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-    perror("ERROR on binding");
-    exit(1);
-  }
+    /* Initialize socket structure */
+    bzero((char *) &serv_addr, sizeof(serv_addr));
 
-  /* Now start listening for the clients, here process will
-   * go in sleep mode and will wait for the incoming connection
-   */
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;
+    serv_addr.sin_port = htons(portno);
 
-  listen(sockfd, 5);
-  clilen = sizeof(cli_addr);
+    /* Now bind the host address using bind() call.*/
+    if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR on binding");
+        close(sockfd);
+        return 1;
+    }
 
-  /* Accept actual connection from the client */
-  newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+    /* Now start listening for the clients, here process will
+       * go in sleep mode and will wait for the incoming connection
+    */
 
-  if (newsockfd < 0) {
-    perror("ERROR on accept");
-    exit(1);
-  }
+    listen(sockfd, 5);
+    clilen = sizeof(cli_addr);
+    
+    /* Accept actual connection from the client */
+    while (1) {
+        newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+        
+        if (newsockfd < 0) {
+            perror("ERROR on accept");
+            continue;
+        }
 
-  /* If connection is established then start communicating */
-  bzero(buffer, 256);
-  n = read(newsockfd, buffer, 255);
+        if (count_active_clients + 1 > MAX_COUNT_CLIENTS) {
+            perror("Customer limit exceeded");
+            close(newsockfd);
+            continue;
+        }
 
-  if (n < 0) {
-    perror("ERROR reading from socket");
-    exit(1);
-  }
+        int cell = reserve_socket_cell();
 
-  printf("Here is the message: %s\n", buffer);
+        if (cell == -1) {
+            perror("Customer limit exceeded");
+            close(newsockfd);
+            continue;
+        }
+        pthread_mutex_lock(&mtx);
+        clients[cell] = newsockfd;
+        pthread_mutex_unlock(&mtx);
+        pthread_t thread_id;
 
-  /* Write a response to the client */
-  n = write(newsockfd, "I got your message", 18);
+        if (pthread_create(&thread_id, NULL, client_handler, &cell) != 0) {
+            continue;
+        }
 
-  if (n < 0) {
-    perror("ERROR writing to socket");
-    exit(1);
-  }
+        pthread_detach(thread_id);
+    }
 
-  return 0;
+    return 0;
 }
