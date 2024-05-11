@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     pthread_mutex_unlock(&mtx);
     pthread_t thread_id;
 
-    if (pthread_create(&thread_id, NULL, client_handler, &cell) != 0) {
+    if (pthread_create(&thread_id, NULL, client_handler, (void*)&cell) != 0) {
       continue;
     }
 
