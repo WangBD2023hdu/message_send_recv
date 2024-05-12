@@ -66,6 +66,7 @@ static void *server_handler(void *arg) {
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
   }
+  close(sockfd_);
   return NULL;
 }
 
@@ -188,7 +189,7 @@ int main(int argc, char *argv[]) {
 
     if (!send_message(sockfd, nickname, buffer)) {
       perror("ERROR writing to socket");
-      exit(1);
+      break;
     }
   }
 
