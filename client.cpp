@@ -8,8 +8,8 @@
 
 #include <string.h>
 
+#include <signal.h>
 #include <time.h>
-
 pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 char is_input_mode;
@@ -100,8 +100,12 @@ char send_message(int sockfd, char *nickname, char *text) {
 
   return '1';  // send message sucess
 }
-
+void handdle(int signal) {
+  printf("%d", signal);
+  return;
+}
 int main(int argc, char *argv[]) {
+  signal(SIGPIPE, handdle);
   int sockfd = 0;
   char *nickname = NULL;
   uint16_t portno = 0;
