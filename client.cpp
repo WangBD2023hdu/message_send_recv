@@ -19,7 +19,7 @@ char force_read(int sockfd, char *buffer, int len) {
   int i = 0;
   for (; i <= len;) {
     nLen = (int)recv(sockfd, buffer, len, 0);
-    if (nLen <= 0) {
+    if (nLen < 0) {
       perror("<socket>is closed\n");
       return '0';
     }
