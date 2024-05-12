@@ -39,7 +39,7 @@ static inline void free_socket_cell(int cell) {
 
   pthread_mutex_lock(&mtx);
   count_active_clients--;
-  close(clients[cell]);
+  //close(clients[cell]);
   is_active[cell] = 0;  // TODO
   pthread_mutex_unlock(&mtx);
 }

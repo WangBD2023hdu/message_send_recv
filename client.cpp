@@ -170,10 +170,11 @@ int main(int argc, char *argv[]) {
       }
 
       printf("Invalid input\n");
+
       bzero(buffer, 256);
       fgets(buffer, 200, stdin);
-    }
 
+    }
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
     pthread_mutex_unlock(&input_mode_mtx);
