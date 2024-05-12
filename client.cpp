@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
 
     /* Send message to the server */
 
-    if (!send_message(sockfd, nickname, buffer)) {
+    if ('0' == send_message(sockfd, nickname, buffer)) {
       perror("ERROR writing to socket");
       break;
     }

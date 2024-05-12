@@ -40,7 +40,7 @@ static inline void free_socket_cell(int cell) {
   pthread_mutex_lock(&mtx);
   count_active_clients--;
   close(clients[cell]);
-  is_active[cell] = 0;  // TODO
+  is_active[cell] = '0';  // TODO
   pthread_mutex_unlock(&mtx);
 }
 
@@ -57,13 +57,15 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
     flag = is_active[i];
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
-    if (flag) {
+    if ('0' != flag) {
       if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
         free_socket_cell(i);
+        continue;
         perror("send message len error");
       }
       if (send(sockfd, buffer, (int)message_len, 0) == -1) {
         free_socket_cell(i);
+        continue;
         perror("send message error");
       }
     }
