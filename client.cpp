@@ -182,6 +182,7 @@ int main(int argc, char *argv[]) {
       bzero(buffer, 256);
       fflush(stdin);
       fgets(buffer, 200, stdin);
+      break;
     }
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
