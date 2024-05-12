@@ -20,12 +20,12 @@ pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
   count_active_clients++;
-  if (count_active_clients > MAX_COUNT_CLIENTS - 1) {
+  if (count_active_clients > MAX_COUNT_CLIENTS) {
     count_active_clients--;
     return -1;
   }
   int i = 1;
-  while (is_active[i] != '0' && i < MAX_COUNT_CLIENTS - 1) {
+  while (is_active[i] != '\0' && i < MAX_COUNT_CLIENTS - 1) {
     ++i;
   }
   is_active[i] = i;  // TODO
@@ -41,7 +41,7 @@ static inline void free_socket_cell(int cell) {
   pthread_mutex_lock(&mtx);
   count_active_clients--;
   close(clients[cell]);
-  is_active[cell] = '0';  // TODO
+  is_active[cell] = '\0';  // TODO
   pthread_mutex_unlock(&mtx);
 }
 
@@ -58,7 +58,7 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
     flag = is_active[i];
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
-    if ('0' != flag) {
+    if ('\0' != flag) {
       if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
         free_socket_cell(i);
         continue;
@@ -79,6 +79,7 @@ static void *client_handler(void *arg) {
    */
   int cell = *(int *)arg;
   free(arg);
+  printf("cell %d\n", cell);
   char nick[256];
   char message[256];
   char nick_len;
@@ -196,8 +197,10 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_poniter = (int *)malloc(sizeof(int));
     *cell_poniter = cell;
+    printf("befor %d", cell);
     if (pthread_create(&thread_id, NULL, client_handler,
                        (void *)(cell_poniter)) != 0) {
+      free(cell_poniter);
       continue;
     }
 
