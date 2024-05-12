@@ -1,243 +1,270 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <pthread.h>
 #include <unistd.h>
 
+#include <pthread.h>
 #include <string.h>
+#include <time.h>
+#include <sys/socket.h>
 
-#include <signal.h>
-#define MAX_COUNT_CLIENTS 100
+using namespace std;
 
-int clients[MAX_COUNT_CLIENTS];
-char is_active[MAX_COUNT_CLIENTS];
-int count_active_clients;
+#define DEFAULT_BUF_SIZE 512
+#define DEFAULT_NICK_SIZE 32
+#define DEFAULT_BYTES_SIZE 4
+#define MAX_CLIENTS 10
 
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+ssize_t tcp_recv(int sockfd, char *buf, size_t len) {
+    for (size_t index = 0; index < len; ) {
+        int result = recv(sockfd, buf + index, len - index, 0);
+        if (result <= 0) {
+            return -1;
+        }
+        index += result;
+    }
+    return 0;
+}
 
-static inline int reserve_socket_cell() {
-  pthread_mutex_lock(&mtx);
-  count_active_clients++;
-  if (count_active_clients > MAX_COUNT_CLIENTS) {
-    count_active_clients--;
+ssize_t tcp_send(int sockfd, char *buf, size_t len) {
+    for (size_t index = 0; index < len; ) {
+        int result = send(sockfd, buf + index, len - index, 0);
+        if (result <= 0) {
+            return -1;
+        }
+        index += result;
+    }
+    return 0;
+}
+
+struct client_t {
+  int id;
+  int serverSocket;
+  char clientNickname[DEFAULT_NICK_SIZE];
+};
+
+static unsigned int clients_num = 0;
+client_t *clients[MAX_CLIENTS];  // ID从1开始
+pthread_mutex_t messageMutex = PTHREAD_MUTEX_INITIALIZER;
+
+/* 将客户端添加到队列中 */
+void add_client(client_t *cli) {
+  pthread_mutex_lock(&messageMutex);
+
+  int i = 0;
+  while (i < MAX_CLIENTS) {
+    if (!clients[i]) {
+      clients[i] = cli;
+      clients[i]->id = i + 1;
+      break;
+    }
+    i++;
+  }
+
+  pthread_mutex_unlock(&messageMutex);
+}
+
+/* 从队列中移除客户端 */
+void remove_client(int id) {
+  pthread_mutex_lock(&messageMutex);
+
+  int i = 0;
+  while (i < MAX_CLIENTS) {
+    if (clients[i]) {
+      if (clients[i]->id == id) {
+        clients[i] = NULL;
+        break;
+      }
+    }
+    i++;
+  }
+
+  pthread_mutex_unlock(&messageMutex);
+}
+
+/*
+根据协议标准发送消息:
+消息大小，然后是消息正文
+*/
+int send_msg(int serverSocket, char *msg) {
+  uint32_t msg_size = htonl(strlen(msg));
+  int res = tcp_send(serverSocket, (char *)&msg_size, DEFAULT_BYTES_SIZE);
+  if (res == 0) {
+    res = tcp_send(serverSocket, msg, strlen(msg));
+    if (res < 0) return -1;
+  } else
     return -1;
-  }
-  int i = 1;
-  while (is_active[i] != '\0' && i < MAX_COUNT_CLIENTS - 1) {
-    ++i;
-  }
-  is_active[i] = i;  // TODO
-  pthread_mutex_unlock(&mtx);
-  return i;
+
+  return 0;
 }
 
-static inline void free_socket_cell(int cell) {
-  /**
-   * free the clients and is_activearray cells
-   */
+/* 向所有客户端发送消息 */
+void broadcast_message(char *s) {
+  pthread_mutex_lock(&messageMutex);
 
-  pthread_mutex_lock(&mtx);
-  count_active_clients--;
-  close(clients[cell]);
-  is_active[cell] = '\0';  // TODO
-  pthread_mutex_unlock(&mtx);
-}
-
-static inline void notify_all(char *buffer, char message_len, int skip) {
-  /**
-   * send the message to every active client
-   */
-  int i = 1;
-  int sockfd;
-  char flag;
-  for (; i < MAX_COUNT_CLIENTS; ++i) {
-    if (i == skip) continue;
-    flag = is_active[i];
-    sockfd = clients[i];
-    if ('\0' != flag) {
-      printf("finsh %d\n", i);
-      if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
+  int i = 0;
+  while (i < MAX_CLIENTS) {
+    if (clients[i]) {
+      if (send_msg(clients[i]->serverSocket, s) < 0) {
+        perror("错误:发送描述符失败");
         continue;
-        perror("send message len error");
-      }
-      if (send(sockfd, buffer, (int)message_len, 0) == -1) {
-        continue;
-        perror("send message error");
       }
     }
+    i++;
   }
+
+  pthread_mutex_unlock(&messageMutex);
 }
 
-static void *client_handler(void *arg) {
-  /**
-   * get message from client and to notify all other clients.
-   */
-  int cell = *(int *)arg;
-  free(arg);
-  char nick[256];
-  char message[256];
-  char nick_len = 0;
-  char message_len;
-  bzero(message, 256);
-  bzero(nick, 256);
-  pthread_mutex_lock(&mtx);
-  int sockfd = clients[cell];
-  pthread_mutex_unlock(&mtx);
-  int reflag;
-  while (1) {
-    reflag = 0;
-    int ii = 0;
-    for (; ii < 1;) {
-      reflag = recv(sockfd, &nick_len, sizeof(char), 0);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive1 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag <= 0) {
+void *handle_client(void *arg) {
+  char buffer[DEFAULT_BUF_SIZE];
+  int leave_flag = 0;
+  uint32_t nickname_size = 0;
+  uint32_t msg_size = 0;
+
+  clients_num++;
+  client_t *cli = (client_t *)arg;
+
+  while (true) {
+    if (leave_flag) {
       break;
     }
-    ii = 0;
-    reflag = 0;
-    for (; ii < nick_len;) {
-      reflag = recv(sockfd, nick + reflag, (int)nick_len, 0);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive2 false");
-        break;
+    // 获取nick size
+    int receive =tcp_recv(cli->serverSocket, (char *)&nickname_size, DEFAULT_BYTES_SIZE);
+
+    if (receive == 0 && nickname_size > 0) {
+      // 如果没有错误，获取nickname
+      nickname_size = ntohl(nickname_size);
+
+      char *nick_buf = (char *)malloc(sizeof(char) * (nickname_size + 1));
+      memset(nick_buf, 0, (nickname_size + 1));
+      receive = tcp_recv(cli->serverSocket, nick_buf, nickname_size);
+
+      if (receive == 0) {
+        // 如果没有错误，将昵称分配给client对象
+        strncpy(cli->clientNickname, nick_buf, nickname_size + 1);
+        // 获取消息大小
+        receive = tcp_recv(cli->serverSocket, (char *)&msg_size, DEFAULT_BYTES_SIZE);
+
+        if (receive == 0 && msg_size > 0) {
+          // 如果没有错误，获取消息
+          msg_size = ntohl(msg_size);
+
+          char *msg_buf = (char *)malloc(sizeof(char) * (msg_size + 1));
+          memset(msg_buf, 0, (msg_size + 1));
+          receive = tcp_recv(cli->serverSocket, msg_buf, msg_size);
+
+          if (receive == 0) {
+            time_t t = time(NULL);
+            struct tm *lt = localtime(&t);
+            sprintf(buffer, "%02d:%02d", lt->tm_hour, lt->tm_min);
+
+            broadcast_message(nick_buf);
+            broadcast_message(msg_buf);
+            broadcast_message(buffer);
+          }
+          free(msg_buf);
+        }
       }
-      ii += reflag;
+      free(nick_buf);
+    } else if (receive == 0) {
+      sprintf(buffer, "Client with id %d has left\n", cli->id);
+      printf("%s", buffer);
+      leave_flag = 1;
+    } else {
+      printf("ERROR: -1\n");
+      sprintf(buffer, "Client with id %d has left\n", cli->id);
+      printf("%s", buffer);
+      leave_flag = 1;
     }
-    if (reflag <= 0) {
-      break;
-    }
-    ii = 0;
-    reflag = 0;
-    for (; ii < 1;) {
-      reflag = recv(sockfd, &message_len, sizeof(char), 0);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive3 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag <= 0) {
-      break;
-    }
-    ii = 0;
-    reflag = 0;
-    for (; ii < message_len;) {
-      reflag = recv(sockfd, message + reflag, (int)message_len, 0);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive4 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag <= 0) {
-      break;
-    }
-    time_t t = time(NULL);
-    struct tm *lt = localtime(&t);
-    printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
-    pthread_mutex_lock(&mtx);
-    notify_all(nick, nick_len, cell);
-    notify_all(message, message_len, cell);
-    pthread_mutex_unlock(&mtx);
+    memset(buffer, 0, DEFAULT_BUF_SIZE);
   }
+
+  /* 从队列中删除客户端并退出线程 */
+  close(cli->serverSocket);
+  remove_client(cli->id);
+  free(cli);
+  clients_num--;
+  pthread_detach(pthread_self());
+
   return NULL;
 }
-void handdle(int signal) {
-  printf("%d", signal);
-  return;
-}
+
 int main(int argc, char *argv[]) {
-  signal(SIGPIPE, handdle);
-  int sockfd, newsockfd;
-  uint16_t portno;
-  unsigned int clilen;
-  struct sockaddr_in serv_addr, cli_addr;
   (void)argc;
   (void)argv;
+  int server_sockfd, newsockfd;
+  uint16_t portno;
+  struct sockaddr_in serv_addr, cli_addr;
+  pthread_t tid;
 
-  /* First call to socket() function */
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-  if (sockfd < 0) {
-    perror("ERROR opening socket");
-    return 1;
-  }
-
-  if (argc != 2) {
-    fprintf(stderr, "usage: %s port\n", argv[0]);
-    exit(0);
+  // 检查参数
+  if (argc < 2) {
+    fprintf(stderr, "您忘记输入端口号 %s.\n", argv[0]);
+    exit(EXIT_SUCCESS);
   }
 
   portno = (uint16_t)atoi(argv[1]);
 
-  /* Initialize socket structure */
+  // 初始化套接字
+  server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
+
+  if (server_sockfd < 0) {
+    perror("打开服务器套接字时出错");
+    exit(EXIT_FAILURE);
+  }
+
+  // 初始化套接字结构体
   bzero((char *)&serv_addr, sizeof(serv_addr));
 
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;  // inet_addr(ip.c_str());
   serv_addr.sin_port = htons(portno);
 
-  /* Now bind the host address using bind() call.*/
-  if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-    perror("ERROR on binding");
-    close(sockfd);
-    return 1;
-  }
+  // 绑定
+  bind(server_sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
 
-  /* Now start listening for the clients, here process will
-   * go in sleep mode and will wait for the incoming connection
-   */
+  // 一次最多监听5个请求
+  printf("监听中......\n");
+  listen(server_sockfd, 5);
 
-  listen(sockfd, 5);
-  clilen = sizeof(cli_addr);
+  printf("------ 欢迎来到聊天室 ------\n");
 
-  /* Accept actual connection from the client */
-  while (1) {
-    newsockfd = accept(sockfd, (struct sockaddr *)&cli_addr, &clilen);
+  // Accept actual connections from the clients
+  while (true) {
+    unsigned int clilen = sizeof(cli_addr);
+    newsockfd = accept(server_sockfd, (struct sockaddr *)&cli_addr, &clilen);
 
     if (newsockfd < 0) {
-      perror("ERROR on accept");
+      perror("接受客户端套接字时出错");
       continue;
     }
 
-    if (count_active_clients + 1 > MAX_COUNT_CLIENTS) {
-      perror("Customer limit exceeded");
+    if (clients_num < MAX_CLIENTS) {
+      // Add a client
+      client_t *cli = (client_t *)malloc(sizeof(client_t));
+      cli->serverSocket = newsockfd;
+      add_client(cli);
+      printf("客户端：id %d 已加入聊天\n", cli->id);
+
+      // Create a thread process for that client
+      pthread_create(&tid, NULL, &handle_client, (void *)cli);
+      pthread_detach(tid);
+    } else {
+      printf("服务器已满\n");
       close(newsockfd);
       continue;
     }
-
-    int cell = reserve_socket_cell();
-
-    if (cell == -1) {
-      perror("Customer limit exceeded");
-      close(newsockfd);
-      continue;
-    }
-    pthread_mutex_lock(&mtx);
-    clients[cell] = newsockfd;
-    pthread_mutex_unlock(&mtx);
-    pthread_t thread_id;
-    int *cell_poniter = (int *)malloc(sizeof(int));
-    *cell_poniter = cell;
-    if (pthread_create(&thread_id, NULL, client_handler,
-                       (void *)(cell_poniter)) != 0) {
-      free(cell_poniter);
-      continue;
-    }
-
-    pthread_detach(thread_id);
   }
+
+  // Close listening socket
+  close(server_sockfd);
+  pthread_exit(NULL);
+
+  printf("已经成功结束\n");
 
   return 0;
 }
