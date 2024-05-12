@@ -81,15 +81,19 @@ char send_message(int sockfd, char *nickname, char *text) {
   char nick_len = strlen(nickname) + 1;
   char text_len = strlen(text) + 1;
   if ('F' == force_send(sockfd, &nick_len, sizeof(char))) {
+    fprintf(stdout,"send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, nickname, strlen(nickname) + 1)) {
+    fprintf(stdout,"send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, &text_len, sizeof(char))) {
+    fprintf(stdout,"send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, text, strlen(text) + 1)) {
+    fprintf(stdout,"send 1 false");
     return '0';
   }
 
@@ -159,16 +163,16 @@ int main(int argc, char *argv[]) {
   while (1) {
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-    // while (strcmp(buffer, "m\n") != 0) {
-    //   if (strcmp(buffer, "exit\n") == 0) {
-    //     close(sockfd);
-    //     return 0;
-    //   }
+    while (strcmp(buffer, "m\n") != 0) {
+      if (strcmp(buffer, "exit\n") == 0) {
+        close(sockfd);
+        return 0;
+      }
 
-    //   printf("Invalid input\n");
-    //   bzero(buffer, 256);
-    //   fgets(buffer, 200, stdin);
-    // }
+      printf("Invalid input\n");
+      bzero(buffer, 256);
+      fgets(buffer, 200, stdin);
+    }
 
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
