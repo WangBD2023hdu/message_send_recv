@@ -113,7 +113,6 @@ int main(int argc, char *argv[]) {
   struct hostent *server = NULL;
 
   char buffer[256] = {};
-  char message[256] = {};
 
   if (argc != 4) {
     fprintf(stderr, "usage: %s hostname port nickname\n", argv[0]);
