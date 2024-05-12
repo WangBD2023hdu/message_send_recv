@@ -85,23 +85,23 @@ static void *client_handler(void *arg) {
     if (recv(sockfd, &nick_len, sizeof(char), 0) <= 0) {
       free_socket_cell(cell);
 
-      perror("recive false");
+      perror("recive1 false");
       break;
     }
     if (recv(sockfd, nick, (int)nick_len, 0) <= 0) {
       free_socket_cell(cell);
-      perror("recive false");
+      perror("recive2 false");
       break;
     }
     if (recv(sockfd, &message_len, sizeof(char), 0) <= 0) {
       free_socket_cell(cell);
 
-      perror("recive false");
+      perror("recive3 false");
       break;
     }
     if (recv(sockfd, message, (int)message_len, 0) <= 0) {
       free_socket_cell(cell);
-      perror("recive false");
+      perror("recive4 false");
       break;
     }
     time_t t = time(NULL);
