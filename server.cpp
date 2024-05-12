@@ -79,7 +79,9 @@ static void *client_handler(void *arg) {
    */
   int cell = *(int *)arg;
   free(arg);
-  printf("cell %d\n", cell);
+  pthread_mutex_lock(&mtx);
+  printf("cell %d %d\n", count_active_clients, clients[cell]);
+  pthread_mutex_unlock(&mtx);
   char nick[256];
   char message[256];
   char nick_len;
@@ -117,6 +119,9 @@ static void *client_handler(void *arg) {
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
     notify_all(nick, nick_len, cell);
     notify_all(message, message_len, cell);
+    pthread_mutex_lock(&mtx);
+    printf("end %d", count_active_clients);
+    pthread_mutex_unlock(&mtx);
   }
   return NULL;
 }
@@ -197,7 +202,6 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_poniter = (int *)malloc(sizeof(int));
     *cell_poniter = cell;
-    printf("befor %d", cell);
     if (pthread_create(&thread_id, NULL, client_handler,
                        (void *)(cell_poniter)) != 0) {
       free(cell_poniter);
