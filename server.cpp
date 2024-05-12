@@ -78,6 +78,7 @@ static void *client_handler(void *arg) {
    * get message from client and to notify all other clients.
    */
   int cell = *(int *)arg;
+  free(arg);
   char nick[256];
   char message[256];
   char nick_len;
@@ -193,9 +194,10 @@ int main(int argc, char *argv[]) {
     clients[cell] = newsockfd;
     pthread_mutex_unlock(&mtx);
     pthread_t thread_id;
-
+    int *cell_poniter = (int *)malloc(sizeof(int));
+    *cell_poniter = cell;
     if (pthread_create(&thread_id, NULL, client_handler,
-                       (void *)(is_active + cell)) != 0) {
+                       (void *)(cell_poniter)) != 0) {
       continue;
     }
 
