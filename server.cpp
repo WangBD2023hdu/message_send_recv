@@ -89,10 +89,10 @@ static void *client_handler(void *arg) {
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
-  size_t reflag;
+  int reflag;
   while (1) {
     reflag = 0;
-    size_t ii = 0;
+    int ii = 0;
     for (; ii < 1;) {
       reflag = recv(sockfd, &nick_len, sizeof(char), 0);
       if (reflag < 0) {
