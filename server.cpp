@@ -21,6 +21,7 @@ static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
   count_active_clients++;
   if (count_active_clients > MAX_COUNT_CLIENTS) {
+    count_active_clients--;
     return -1;
   }
   int i = 1;
@@ -48,7 +49,7 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
   /**
    * send the message to every active client
    */
-  int i = 0;
+  int i = 1;
   int sockfd;
   char flag;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
