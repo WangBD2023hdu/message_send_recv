@@ -25,7 +25,7 @@ static inline int reserve_socket_cell() {
     return -1;
   }
   int i = 1;
-  while (is_active[i] != '0' && i < MAX_COUNT_CLIENTS-1) {
+  while (is_active[i] != '0' && i < MAX_COUNT_CLIENTS - 1) {
     ++i;
   }
   is_active[i] = i;  // TODO
