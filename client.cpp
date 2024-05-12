@@ -81,19 +81,19 @@ char send_message(int sockfd, char *nickname, char *text) {
   char nick_len = strlen(nickname) + 1;
   char text_len = strlen(text) + 1;
   if ('F' == force_send(sockfd, &nick_len, sizeof(char))) {
-    fprintf(stdout,"send 1 false");
+    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, nickname, strlen(nickname) + 1)) {
-    fprintf(stdout,"send 1 false");
+    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, &text_len, sizeof(char))) {
-    fprintf(stdout,"send 1 false");
+    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, text, strlen(text) + 1)) {
-    fprintf(stdout,"send 1 false");
+    fprintf(stdout, "send 1 false");
     return '0';
   }
 
