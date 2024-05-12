@@ -190,7 +190,6 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-    printf("data %s", buffer);
     is_input_mode = 0;
 
     /* Send message to the server */
