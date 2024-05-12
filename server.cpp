@@ -20,7 +20,7 @@ pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
   count_active_clients++;
-  if (count_active_clients > MAX_COUNT_CLIENTS) {
+  if (count_active_clients > MAX_COUNT_CLIENTS - 1) {
     count_active_clients--;
     return -1;
   }
