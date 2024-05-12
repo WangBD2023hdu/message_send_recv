@@ -71,11 +71,16 @@ static void *server_handler(void *arg) {
 }
 
 char force_send(int sockfd, char *buffer, int len) {
-  if (-1 == send(sockfd, buffer, len, 0)) {
-    return 'F';
-  } else {
-    return 'T';
+  int i = 0;
+  size_t flaglen;
+  for (; i < len;) {
+    flaglen = send(sockfd, buffer, len, 0);
+    if (flaglen < 0) {
+      return 'F';
+    }
+    i += flaglen;
   }
+  return 'T';
 }
 
 char send_message(int sockfd, char *nickname, char *text) {

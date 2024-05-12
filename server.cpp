@@ -59,6 +59,7 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
     if ('\0' != flag) {
+      printf("finsh %d\n", i);
       if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
         free_socket_cell(i);
         continue;
@@ -81,34 +82,69 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  char nick_len;
+  char nick_len = 0;
   char message_len;
   bzero(message, 256);
   bzero(nick, 256);
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
+  size_t reflag;
   while (1) {
-    if (recv(sockfd, &nick_len, sizeof(char), 0) <= 0) {
-      free_socket_cell(cell);
-
-      fprintf(stdout, "recive1 false");
+    reflag = 0;
+    size_t ii = 0;
+    for (; ii < 1;) {
+      reflag = recv(sockfd, &nick_len, sizeof(char), 0);
+      if (reflag < 0) {
+        free_socket_cell(cell);
+        fprintf(stdout, "recive1 false");
+        break;
+      }
+      ii += reflag;
+    }
+    if (reflag <= 0) {
       break;
     }
-    if (recv(sockfd, nick, (int)nick_len, 0) <= 0) {
-      free_socket_cell(cell);
-      fprintf(stdout, "recive2 false");
+    ii = 0;
+    reflag = 0;
+    for (; ii < nick_len;) {
+      reflag = recv(sockfd, nick + reflag, (int)nick_len, 0);
+      if (reflag < 0) {
+        free_socket_cell(cell);
+        fprintf(stdout, "recive2 false");
+        break;
+      }
+      ii += reflag;
+    }
+    if (reflag <= 0) {
       break;
     }
-    if (recv(sockfd, &message_len, sizeof(char), 0) <= 0) {
-      free_socket_cell(cell);
-
-      fprintf(stdout, "recive3 false");
+    ii = 0;
+    reflag = 0;
+    for (; ii < 1;) {
+      reflag = recv(sockfd, &message_len, sizeof(char), 0);
+      if (reflag < 0) {
+        free_socket_cell(cell);
+        fprintf(stdout, "recive3 false");
+        break;
+      }
+      ii += reflag;
+    }
+    if (reflag <= 0) {
       break;
     }
-    if (recv(sockfd, message, (int)message_len, 0) <= 0) {
-      free_socket_cell(cell);
-      fprintf(stdout, "recive4 false");
+    ii = 0;
+    reflag = 0;
+    for (; ii < message_len;) {
+      reflag = recv(sockfd, message + reflag, (int)message_len, 0);
+      if (reflag < 0) {
+        free_socket_cell(cell);
+        fprintf(stdout, "recive4 false");
+        break;
+      }
+      ii += reflag;
+    }
+    if (reflag <= 0) {
       break;
     }
     time_t t = time(NULL);
@@ -116,9 +152,6 @@ static void *client_handler(void *arg) {
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
     notify_all(nick, nick_len, cell);
     notify_all(message, message_len, cell);
-    pthread_mutex_lock(&mtx);
-    printf("end %d", count_active_clients);
-    pthread_mutex_unlock(&mtx);
   }
   return NULL;
 }
