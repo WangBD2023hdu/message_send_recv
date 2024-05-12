@@ -89,24 +89,24 @@ static void *client_handler(void *arg) {
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
   while (1) {
-    if (recv(sockfd, &nick_len, sizeof(char), 0) < 0) {
+    if (recv(sockfd, &nick_len, sizeof(char), 0) <= 0) {
       free_socket_cell(cell);
 
       fprintf(stdout, "recive1 false");
       break;
     }
-    if (recv(sockfd, nick, (int)nick_len, 0) < 0) {
+    if (recv(sockfd, nick, (int)nick_len, 0) <= 0) {
       free_socket_cell(cell);
       fprintf(stdout, "recive2 false");
       break;
     }
-    if (recv(sockfd, &message_len, sizeof(char), 0) < 0) {
+    if (recv(sockfd, &message_len, sizeof(char), 0) <= 0) {
       free_socket_cell(cell);
 
       fprintf(stdout, "recive3 false");
       break;
     }
-    if (recv(sockfd, message, (int)message_len, 0) < 0) {
+    if (recv(sockfd, message, (int)message_len, 0) <= 0) {
       free_socket_cell(cell);
       fprintf(stdout, "recive4 false");
       break;

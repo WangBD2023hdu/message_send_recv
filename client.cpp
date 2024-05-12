@@ -113,6 +113,7 @@ int main(int argc, char *argv[]) {
   struct hostent *server = NULL;
 
   char buffer[256] = {};
+  char message[256] = {};
 
   if (argc != 4) {
     fprintf(stderr, "usage: %s hostname port nickname\n", argv[0]);
@@ -173,10 +174,9 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         return 0;
       }
-
       printf("Invalid input\n");
-
       bzero(buffer, 256);
+      fflush(stdin);
       fgets(buffer, 200, stdin);
     }
     pthread_mutex_lock(&input_mode_mtx);
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-
+    printf("data %s", buffer);
     is_input_mode = 0;
 
     /* Send message to the server */
