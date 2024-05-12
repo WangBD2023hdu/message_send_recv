@@ -16,11 +16,16 @@ char is_input_mode;
 
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
-  nLen = (int)recv(sockfd, buffer, len, 0);
-  if (nLen <= 0) {
-    perror("<socket>is closed\n");
-    return '0';
+  int i = 0;
+  for (; i <= len;) {
+    nLen = (int)recv(sockfd, buffer, len, 0);
+    if (nLen <= 0) {
+      perror("<socket>is closed\n");
+      return '0';
+    }
+    i += nLen;
   }
+
   return (char)nLen;
 }
 
@@ -73,7 +78,7 @@ static void *server_handler(void *arg) {
 char force_send(int sockfd, char *buffer, int len) {
   int i = 0;
   size_t flaglen;
-  for (; i < len;) {
+  for (; i <= len;) {
     flaglen = send(sockfd, buffer, len, 0);
     if (flaglen < 0) {
       return 'F';
@@ -182,7 +187,6 @@ int main(int argc, char *argv[]) {
       bzero(buffer, 256);
       fflush(stdin);
       fgets(buffer, 200, stdin);
-      break;
     }
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
@@ -191,7 +195,6 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-    printf("data %s", buffer);
     is_input_mode = 0;
 
     /* Send message to the server */
