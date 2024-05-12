@@ -40,7 +40,7 @@ static inline void free_socket_cell(int cell) {
 
   pthread_mutex_lock(&mtx);
   count_active_clients--;
-  close(clients[cell]);
+  // close(clients[cell]);
   is_active[cell] = '\0';  // TODO
   pthread_mutex_unlock(&mtx);
 }
@@ -54,19 +54,15 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
   char flag;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     if (i == skip) continue;
-    pthread_mutex_lock(&mtx);
     flag = is_active[i];
     sockfd = clients[i];
-    pthread_mutex_unlock(&mtx);
     if ('\0' != flag) {
       printf("finsh %d\n", i);
       if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
-        free_socket_cell(i);
         continue;
         perror("send message len error");
       }
       if (send(sockfd, buffer, (int)message_len, 0) == -1) {
-        free_socket_cell(i);
         continue;
         perror("send message error");
       }
@@ -150,9 +146,14 @@ static void *client_handler(void *arg) {
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
+    pthread_mutex_lock(&mtx);
     notify_all(nick, nick_len, cell);
     notify_all(message, message_len, cell);
+    pthread_mutex_unlock(&mtx);
   }
+  pthread_mutex_lock(&mtx);
+  close(clients[cell]);
+  pthread_mutex_unlock(&mtx);
   return NULL;
 }
 void handdle(int signal) {

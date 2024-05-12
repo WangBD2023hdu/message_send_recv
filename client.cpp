@@ -17,8 +17,8 @@ char is_input_mode;
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
   int i = 0;
-  for (; i <= len;) {
-    nLen = (int)recv(sockfd, buffer, len, 0);
+  for (; i < len;) {
+    nLen = (int)recv(sockfd, buffer, len - i, 0);
     if (nLen < 0) {
       perror("<socket>is closed\n");
       return '0';
@@ -26,7 +26,7 @@ char force_read(int sockfd, char *buffer, int len) {
     i += nLen;
   }
 
-  return (char)nLen;
+  return (char)i;
 }
 
 char read_message(int sockfd_, char *buffer) {
