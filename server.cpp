@@ -85,13 +85,13 @@ static void *client_handler(void *arg) {
   pthread_mutex_unlock(&mtx);
   int flag;
   while (1) {
-    if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) < 0) {
+    if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) <= 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv1 return %d \n", flag);
       fflush(stderr);
       break;
     }
-    if ((flag = recv(sockfd, nick, (int)nick_len, 0)) < 0) {
+    if ((flag = recv(sockfd, nick, (int)nick_len, 0)) <= 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv2 return %d \n", flag);
       fflush(stderr);
