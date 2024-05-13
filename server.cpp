@@ -45,7 +45,7 @@ static inline void free_socket_cell(int cell) {
   pthread_mutex_unlock(&mtx);
 }
 
-static inline void notify_all(char *buffer, char message_len, int skip) {
+static inline void notify_all(char *buffer, int message_len, int skip) {
   /**
    * send the message to every active client
    */
@@ -59,25 +59,13 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
     if (flag) {
-      if (send(sockfd, &message_len, sizeof(char), 0) == -1)
+      if (send(sockfd, &message_len, sizeof(int), 0) == -1)
         perror("send message len error");
 
       if (send(sockfd, buffer, (int)message_len, 0) == -1)
         perror("send message error");
     }
   }
-}
-int read_msg(int sockfd, char *buffer, int len) {
-  int i = 0, flag = 0;
-  int recvlen = 0;
-  for (; i < len;) {
-    flag = recvlen = recv(sockfd, buffer + i, len - i, 0);
-    if (flag < 0) {
-      return -1;
-    }
-    i += recvlen;
-  }
-  return 0;
 }
 
 static void *client_handler(void *arg) {
@@ -99,38 +87,27 @@ static void *client_handler(void *arg) {
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) < 0) {
       free_socket_cell(cell);
-      fprintf(stderr, "recv1 return %d read %d\n", flag, (int)ntohl(nick_len));
-      fflush(stderr);
+      perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "recv1 success return %d  read %d\n", flag,
-            (int)ntohl(nick_len));
-    fflush(stdout);
     if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) < 0) {
       free_socket_cell(cell);
-      fprintf(stderr, "recv2 return %d \n", flag);
-      fflush(stderr);
+      perror("ERROR opening socket");
+
       break;
     }
-    fprintf(stdout, "recv2 success return %d  read %d\n", flag,
-            (int)ntohl(nick_len));
-    fflush(stdout);
-    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
-      free_socket_cell(cell);
-      fprintf(stderr, "recv3 return %d \n", flag);
-      fflush(stderr);
+    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) < 0) {
       break;
+      perror("ERROR opening socket");
     }
-    fprintf(stdout, "recv3 success return %d  read %s\n", flag, message);
-    fflush(stdout);
     if (recv(sockfd, message, (int)ntohl(message_len), 0) < 0) {
       free_socket_cell(cell);
-      fprintf(stderr, "recv4 return %d \n", flag);
+      perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "recv4 success return %d  read %s read %s\n", flag, nick,
-            message);
-    fflush(stdout);
+    time_t t = time(NULL);
+    struct tm *lt = localtime(&t);
+    printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
     notify_all(nick, (int)ntohl(nick_len), cell);
     notify_all(message, (int)ntohl(message_len), cell);
   }

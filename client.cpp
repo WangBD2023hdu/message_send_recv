@@ -152,8 +152,7 @@ int main(int argc, char *argv[]) {
   /* Now ask for a message from the user, this message
    * will be read by server
    */
-  fprintf(stdout, "work normal");
-  fflush(stdout);
+
   pthread_t thread_id;
   if (pthread_create(&thread_id, NULL, server_handler, &sockfd) != 0) {
     perror("ERROR thread create");
