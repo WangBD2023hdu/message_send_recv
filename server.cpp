@@ -109,6 +109,8 @@ static void *client_handler(void *arg) {
       fflush(stderr);
       break;
     }
+    fprintf(stdout, "recv3 success return %d  read %s\n", flag, message);
+    fflush(stdout);
     if (recv(sockfd, message, *message_len, 0) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv4 return %d \n", flag);
