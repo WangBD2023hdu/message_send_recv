@@ -55,10 +55,10 @@ static inline void notify_all(char *buffer, int message_len, int skip) {
   uint32_t len = htonl(message_len);
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     if (i == skip) continue;
-    pthread_mutex_lock(&mtx);
+
     flag = is_active[i];
     sockfd = clients[i];
-    pthread_mutex_unlock(&mtx);
+
     if (flag) {
       fprintf(stdout, "f:%d fd %d", i, sockfd);
       fflush(stdout);
@@ -105,14 +105,14 @@ static void *client_handler(void *arg) {
 
       break;
     }
-    fprintf(stdout, "recv 2f:%d fd:%d flag:%d", (int)ntohl(nick_len), sockfd,
+    fprintf(stdout, "recv 2f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
     if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
       break;
       perror("ERROR opening socket");
     }
-    fprintf(stdout, "recv 3f:%d fd:%d flag:%d", (int)ntohl(nick_len), sockfd,
+    fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
     if (recv(sockfd, message, (int)ntohl(message_len), 0) <= 0) {
@@ -120,16 +120,19 @@ static void *client_handler(void *arg) {
       perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d fd:%d flag:%d", (int)ntohl(nick_len), sockfd,
+    fprintf(stdout, "recv 4f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
     fflush(stdout);
+    pthread_mutex_lock(&mtx);
     notify_all(nick, (int)ntohl(nick_len), cell);
     notify_all(message, (int)ntohl(message_len), cell);
+    pthread_mutex_unlock(&mtx);
   }
+  free_socket_cell(cell);
   return NULL;
 }
 void handdle(int signal) {
