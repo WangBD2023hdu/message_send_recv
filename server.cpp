@@ -79,10 +79,13 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
+  char body[256];
   uint32_t nick_len;
   uint32_t message_len;
+  uint32_t body_len = 0;
   bzero(message, 256);
   bzero(nick, 256);
+  bzero(body, 256);
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
@@ -128,6 +131,7 @@ static void *client_handler(void *arg) {
     pthread_mutex_lock(&mtx);
     notify_all(nick, (int)ntohl(nick_len), cell);
     notify_all(message, (int)ntohl(message_len), cell);
+    notify_all(body, strlen(body), cell);
     pthread_mutex_unlock(&mtx);
   }
   free_socket_cell(cell);

@@ -14,24 +14,35 @@ pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 char is_input_mode;
 
-char force_read(int sockfd, char *buffer, int len) {
-  int nLen;
-  nLen = (int)recv(sockfd, buffer, len, 0);
-  if (nLen <= 0) {
-    perror("<socket>is closed\n");
-    return '0';
+// char force_read(int sockfd, char *buffer, int len) {
+//   int nLen;
+//   nLen = (int)recv(sockfd, buffer, len, 0);
+//   if (nLen <= 0) {
+//     perror("<socket>is closed\n");
+//     return '0';
+//   }
+//   return (char)nLen;
+// }
+
+ssize_t force_read(int sockfd, char *buf, size_t len) {
+  for (size_t index = 0; index < len;) {
+    int result = recv(sockfd, buf + index, len - index, 0);
+    if (result <= 0) {
+      return -1;
+    }
+    index += result;
   }
-  return (char)nLen;
+  return 0;
 }
 
 char read_message(int sockfd_, char *buffer) {
   uint32_t len;
 
-  if ('0' == force_read(sockfd_, (char *)&len, sizeof(uint32_t))) {
+  if (-1 == force_read(sockfd_, (char *)&len, sizeof(uint32_t))) {
     perror("read head failure");
     return '0';
   }
-  if ('0' == force_read(sockfd_, buffer, (int)ntohl(len))) {
+  if (-1 == force_read(sockfd_, buffer, (size_t)ntohl(len))) {
     perror("read data failure");
     return '0';
   }
@@ -40,16 +51,22 @@ char read_message(int sockfd_, char *buffer) {
 
 static void *server_handler(void *arg) {
   int sockfd_ = *(int *)arg;
-  char nick[256] = {};
-  char message[256] = {};
-
+  char nick[256];
+  char message[256];
+  char body[256];
+  bzero(nick, 256);
   bzero(message, 256);
+  bzero(body, 256);
   while (1) {
     if ('0' == read_message(sockfd_, nick)) {
       perror("socket is closed");
       break;
     }
     if ('0' == read_message(sockfd_, message)) {
+      perror("socket is closed");
+      break;
+    }
+    if ('0' == read_message(sockfd_, body)) {
       perror("socket is closed");
       break;
     }
@@ -70,27 +87,37 @@ static void *server_handler(void *arg) {
   return NULL;
 }
 
-char force_send(int sockfd, char *buffer, int len) {
-  if (-1 == send(sockfd, buffer, len, 0)) {
-    return 'F';
-  } else {
-    return 'T';
+// char force_send(int sockfd, char *buffer, int len) {
+//   if (-1 == send(sockfd, buffer, len, 0)) {
+//     return 'F';
+//   } else {
+//     return 'T';
+//   }
+// }
+ssize_t force_send(int sockfd, char *buf, size_t len) {
+  for (size_t index = 0; index < len;) {
+    int result = send(sockfd, buf + index, len - index, 0);
+    if (result <= 0) {
+      return -1;
+    }
+    index += result;
   }
+  return 0;
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
   uint32_t nick_len = htonl((strlen(nickname)));
   uint32_t text_len = htonl((strlen(text)));
-  if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
+  if (-1 == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
     return '0';
   }
-  if ('F' == force_send(sockfd, nickname, strlen(nickname))) {
+  if (-1 == force_send(sockfd, nickname, strlen(nickname))) {
     return '0';
   }
-  if ('F' == force_send(sockfd, (char *)&text_len, sizeof(uint32_t))) {
+  if (-1 == force_send(sockfd, (char *)&text_len, sizeof(uint32_t))) {
     return '0';
   }
-  if ('F' == force_send(sockfd, text, strlen(text))) {
+  if (-1 == force_send(sockfd, text, strlen(text))) {
     return '0';
   }
 
