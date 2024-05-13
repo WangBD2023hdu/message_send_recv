@@ -66,6 +66,7 @@ static void *server_handler(void *arg) {
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
   }
+  close(sockfd_);
   return NULL;
 }
 
