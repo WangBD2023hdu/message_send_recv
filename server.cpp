@@ -87,23 +87,23 @@ static void *client_handler(void *arg) {
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
-      perror("error 1");
+      fprintf(stderr, "recv1 return %d \n", flag);
 
       break;
     }
     if ((flag = recv(sockfd, nick, (int)nick_len, 0)) < 0) {
       free_socket_cell(cell);
-      perror("error 2");
+      fprintf(stderr, "recv2 return %d \n", flag);
       break;
     }
     if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
-      perror("error 3");
+      fprintf(stderr, "recv3 return %d \n", flag);
       break;
     }
     if (recv(sockfd, message, (int)message_len, 0) < 0) {
       free_socket_cell(cell);
-      perror("error 4");
+      fprintf(stderr, "recv4 return %d \n", flag);
       break;
     }
 
