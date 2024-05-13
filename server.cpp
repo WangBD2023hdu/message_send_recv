@@ -82,7 +82,7 @@ static void *client_handler(void *arg) {
   char body[256];
   uint32_t nick_len;
   uint32_t message_len;
-  uint32_t body_len = 0;
+
   bzero(message, 256);
   bzero(nick, 256);
   bzero(body, 256);
