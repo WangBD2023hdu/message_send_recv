@@ -52,6 +52,7 @@ static inline void notify_all(char *buffer, int message_len, int skip) {
   int i = 0;
   int sockfd;
   char flag;
+  uint32_t len = htonl(message_len);
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     if (i == skip) continue;
     pthread_mutex_lock(&mtx);
@@ -59,10 +60,10 @@ static inline void notify_all(char *buffer, int message_len, int skip) {
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
     if (flag) {
-      if (send(sockfd, &message_len, sizeof(int), 0) == -1)
+      if (send(sockfd, &len, sizeof(uint32_t), 0) == -1)
         perror("send message len error");
 
-      if (send(sockfd, buffer, (int)message_len, 0) == -1)
+      if (send(sockfd, buffer, message_len, 0) == -1)
         perror("send message error");
     }
   }

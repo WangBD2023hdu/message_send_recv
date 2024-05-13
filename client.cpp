@@ -17,7 +17,7 @@ char is_input_mode;
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
   nLen = (int)recv(sockfd, buffer, len, 0);
-  if (nLen <= 0) {
+  if (nLen < 0) {
     perror("<socket>is closed\n");
     return '0';
   }
@@ -25,13 +25,13 @@ char force_read(int sockfd, char *buffer, int len) {
 }
 
 char read_message(int sockfd_, char *buffer) {
-  char len;
+  uint32_t len;
 
-  if ('0' == force_read(sockfd_, &len, sizeof(char))) {
+  if ('0' == force_read(sockfd_, (char *)&len, sizeof(uint32_t))) {
     perror("read head failure");
     return '0';
   }
-  if ('0' == force_read(sockfd_, buffer, (int)len)) {
+  if ('0' == force_read(sockfd_, buffer, (int)ntohl(len))) {
     perror("read data failure");
     return '0';
   }
