@@ -60,6 +60,8 @@ static inline void notify_all(char *buffer, int message_len, int skip) {
     sockfd = clients[i];
     pthread_mutex_unlock(&mtx);
     if (flag) {
+      fprintf(stdout, "f:%d fd %d", i, sockfd);
+      fflush(stdout);
       if (send(sockfd, &len, sizeof(uint32_t), 0) == -1)
         perror("send message len error");
 
@@ -106,8 +108,6 @@ static void *client_handler(void *arg) {
       perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "checkout %s %s \n", nick, message);
-    fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
