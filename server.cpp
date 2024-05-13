@@ -83,27 +83,30 @@ static void *client_handler(void *arg) {
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
+  int flag;
   while (1) {
-    if (recv(sockfd, &nick_len, sizeof(char), 0) < 0) {
+    if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
+      printf("%d flag", flag);
+      perror("error 1");
 
-      perror("error");
       break;
     }
-    if (recv(sockfd, nick, (int)nick_len, 0) < 0) {
+    if ((flag = recv(sockfd, nick, (int)nick_len, 0)) < 0) {
       free_socket_cell(cell);
-      perror("error");
+      printf("%d flag", flag);
+      perror("error 2");
       break;
     }
-    if (recv(sockfd, &message_len, sizeof(char), 0) < 0) {
+    if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
-
-      perror("error");
+      printf("%d flag", flag);
+      perror("error 3");
       break;
     }
     if (recv(sockfd, message, (int)message_len, 0) < 0) {
       free_socket_cell(cell);
-      perror("error");
+      perror("error 4");
       break;
     }
 
