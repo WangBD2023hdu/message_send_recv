@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
     perror("ERROR thread create");
     exit(1);
   }
-
-  while (1) {
+  char flag = 1;
+  while (flag) {
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
     while (strcmp(buffer, "m\n") != 0) {
@@ -193,7 +193,8 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         return 0;
       }
-
+      flag = 0;
+      break;
       printf("Invalid input\n");
       bzero(buffer, 256);
       fgets(buffer, 200, stdin);
