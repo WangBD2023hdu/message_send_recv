@@ -96,7 +96,7 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv1 success return %d  read %d\n", flag,
             (int)ntohl(nick_len));
     fflush(stdout);
-    if ((flag = recv(sockfd, nick, nick_len, 0)) < 0) {
+    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv2 return %d \n", flag);
       fflush(stderr);
@@ -112,7 +112,7 @@ static void *client_handler(void *arg) {
     }
     fprintf(stdout, "recv3 success return %d  read %s\n", flag, message);
     fflush(stdout);
-    if (recv(sockfd, message, message_len, 0) < 0) {
+    if (recv(sockfd, message, (int)ntohl(message_len), 0) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv4 return %d \n", flag);
       break;
