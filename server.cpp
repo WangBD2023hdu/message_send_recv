@@ -83,6 +83,8 @@ static void *client_handler(void *arg) {
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
+  fprintf(stdout, "recv fd return %d \n", sockfd);
+  fflush(stdout);
   int flag;
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) <= 0) {
@@ -92,7 +94,7 @@ static void *client_handler(void *arg) {
       break;
     }
     fprintf(stdout, "recv1 success return %d \n", flag);
-    fflush(stderr);
+    fflush(stdout);
     if ((flag = recv(sockfd, nick, (int)nick_len, 0)) <= 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv2 return %d \n", flag);
@@ -193,6 +195,8 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_pointer = (int *)malloc(sizeof(int));
     *cell_pointer = cell;
+    fprintf(stderr, "recv fd b return %d \n", *cell_pointer);
+    fflush(stdout);
     if (pthread_create(&thread_id, NULL, client_handler, cell_pointer) != 0) {
       free(cell_pointer);
       continue;
