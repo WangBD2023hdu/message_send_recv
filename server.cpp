@@ -116,7 +116,9 @@ static void *client_handler(void *arg) {
       fprintf(stderr, "recv4 return %d \n", flag);
       break;
     }
-
+    fprintf(stdout, "recv4 success return %d  read %s read %s\n", flag, nick,
+            message);
+    fflush(stdout);
     notify_all(nick, *nick_len, cell);
     notify_all(message, *message_len, cell);
   }
