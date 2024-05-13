@@ -67,6 +67,18 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
     }
   }
 }
+int read_msg(int sockfd, char *buffer, int len) {
+  int i = 0, flag = 0;
+  int recvlen = 0;
+  for (; i < len;) {
+    flag = recvlen = recv(sockfd, buffer + i, len - i, 0);
+    if (flag < 0) {
+      return -1;
+    }
+    i += recvlen;
+  }
+  return 0;
+}
 
 static void *client_handler(void *arg) {
   /**
@@ -83,8 +95,6 @@ static void *client_handler(void *arg) {
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
-  fprintf(stdout, "recv fd return %d \n", sockfd);
-  fflush(stdout);
   int flag;
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) < 0) {
@@ -102,9 +112,10 @@ static void *client_handler(void *arg) {
       fflush(stderr);
       break;
     }
-    fprintf(stdout, "recv2 success return %d  read %d\n", flag, nick_len);
+    fprintf(stdout, "recv2 success return %d  read %d\n", flag,
+            (int)ntohl(nick_len));
     fflush(stdout);
-    if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) <= 0) {
+    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv3 return %d \n", flag);
       fflush(stderr);
@@ -120,8 +131,8 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv4 success return %d  read %s read %s\n", flag, nick,
             message);
     fflush(stdout);
-    notify_all(nick, nick_len, cell);
-    notify_all(message, message_len, cell);
+    notify_all(nick, (int)ntohl(nick_len), cell);
+    notify_all(message, (int)ntohl(message_len), cell);
   }
   return NULL;
 }
@@ -202,9 +213,6 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_pointer = (int *)malloc(sizeof(int));
     *cell_pointer = cell;
-    fprintf(stderr, "recv fd b return %d  fd %d\n", *cell_pointer,
-            clients[cell]);
-    fflush(stdout);
     if (pthread_create(&thread_id, NULL, client_handler, cell_pointer) != 0) {
       free(cell_pointer);
       continue;
