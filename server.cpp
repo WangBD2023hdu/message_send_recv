@@ -88,17 +88,19 @@ static void *client_handler(void *arg) {
     if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv1 return %d \n", flag);
-
+      fflush(stderr);
       break;
     }
     if ((flag = recv(sockfd, nick, (int)nick_len, 0)) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv2 return %d \n", flag);
+      fflush(stderr);
       break;
     }
     if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv3 return %d \n", flag);
+      fflush(stderr);
       break;
     }
     if (recv(sockfd, message, (int)message_len, 0) < 0) {
