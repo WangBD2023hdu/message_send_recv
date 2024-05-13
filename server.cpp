@@ -76,8 +76,8 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  char *nick_len = (char *)malloc(sizeof(char));
-  char *message_len = (char *)malloc(sizeof(char));
+  int nick_len;
+  int message_len;
   bzero(message, 256);
   bzero(nick, 256);
   pthread_mutex_lock(&mtx);
@@ -87,23 +87,23 @@ static void *client_handler(void *arg) {
   fflush(stdout);
   int flag;
   while (1) {
-    if ((flag = recv(sockfd, nick_len, sizeof(char), 0)) < 0) {
+    if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) < 0) {
       free_socket_cell(cell);
-      fprintf(stderr, "recv1 return %d read %d\n", flag, *nick_len);
+      fprintf(stderr, "recv1 return %d read %d\n", flag, nick_len);
       fflush(stderr);
       break;
     }
-    fprintf(stdout, "recv1 success return %d  read %d\n", flag, *nick_len);
+    fprintf(stdout, "recv1 success return %d  read %d\n", flag, nick_len);
     fflush(stdout);
-    if ((flag = recv(sockfd, nick, (int)*nick_len, 0)) < 0) {
+    if ((flag = recv(sockfd, nick, nick_len, 0)) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv2 return %d \n", flag);
       fflush(stderr);
       break;
     }
-    fprintf(stdout, "recv2 success return %d  read %d\n", flag, *nick_len);
+    fprintf(stdout, "recv2 success return %d  read %d\n", flag, nick_len);
     fflush(stdout);
-    if ((flag = recv(sockfd, message_len, sizeof(char), 0)) <= 0) {
+    if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) <= 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv3 return %d \n", flag);
       fflush(stderr);
@@ -111,7 +111,7 @@ static void *client_handler(void *arg) {
     }
     fprintf(stdout, "recv3 success return %d  read %s\n", flag, message);
     fflush(stdout);
-    if (recv(sockfd, message, *message_len, 0) < 0) {
+    if (recv(sockfd, message, message_len, 0) < 0) {
       free_socket_cell(cell);
       fprintf(stderr, "recv4 return %d \n", flag);
       break;
@@ -119,11 +119,9 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv4 success return %d  read %s read %s\n", flag, nick,
             message);
     fflush(stdout);
-    notify_all(nick, *nick_len, cell);
-    notify_all(message, *message_len, cell);
+    notify_all(nick, nick_len, cell);
+    notify_all(message, message_len, cell);
   }
-  free(nick_len);
-  free(message_len);
   return NULL;
 }
 void handdle(int signal) {
