@@ -79,15 +79,15 @@ char force_send(int sockfd, char *buffer, int len) {
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
-  int nick_len = strlen(nickname) + 1;
-  int text_len = strlen(text) + 1;
-  if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(int))) {
+  uint32_t nick_len = htonl(strlen(nickname) + 1);
+  uint32_t text_len = htonl(strlen(text) + 1);
+  if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
     return '0';
   }
   if ('F' == force_send(sockfd, nickname, strlen(nickname) + 1)) {
     return '0';
   }
-  if ('F' == force_send(sockfd, (char *)&text_len, sizeof(int))) {
+  if ('F' == force_send(sockfd, (char *)&text_len, sizeof(uint32_t))) {
     return '0';
   }
   if ('F' == force_send(sockfd, text, strlen(text) + 1)) {

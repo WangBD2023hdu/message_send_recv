@@ -76,8 +76,8 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  int nick_len;
-  int message_len;
+  uint32_t nick_len;
+  uint32_t message_len;
   bzero(message, 256);
   bzero(nick, 256);
   pthread_mutex_lock(&mtx);
@@ -89,11 +89,12 @@ static void *client_handler(void *arg) {
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) < 0) {
       free_socket_cell(cell);
-      fprintf(stderr, "recv1 return %d read %d\n", flag, nick_len);
+      fprintf(stderr, "recv1 return %d read %d\n", flag, (int)ntohl(nick_len));
       fflush(stderr);
       break;
     }
-    fprintf(stdout, "recv1 success return %d  read %d\n", flag, nick_len);
+    fprintf(stdout, "recv1 success return %d  read %d\n", flag,
+            (int)ntohl(nick_len));
     fflush(stdout);
     if ((flag = recv(sockfd, nick, nick_len, 0)) < 0) {
       free_socket_cell(cell);
