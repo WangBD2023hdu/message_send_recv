@@ -66,7 +66,7 @@ static void *server_handler(void *arg) {
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
   }
-  close(sockfd_);
+  //   close(sockfd_);
   return NULL;
 }
 
@@ -152,7 +152,8 @@ int main(int argc, char *argv[]) {
   /* Now ask for a message from the user, this message
    * will be read by server
    */
-  printf("work normal");
+  fprintf(stdout, "work normal");
+  fflush(stdout);
   pthread_t thread_id;
   if (pthread_create(&thread_id, NULL, server_handler, &sockfd) != 0) {
     perror("ERROR thread create");
