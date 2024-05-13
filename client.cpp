@@ -6,9 +6,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include <string.h>
-
 #include <signal.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <time.h>
 pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
 
@@ -16,12 +16,17 @@ char is_input_mode;
 
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
-  nLen = (int)recv(sockfd, buffer, len, 0);
-  if (nLen <= 0) {
-    perror("<socket>is closed\n");
-    return '0';
+  int i = 0;
+  for (; i < len;) {
+    nLen = (int)recv(sockfd, buffer, len - i, 0);
+    if (nLen < 0) {
+      perror("<socket>is closed\n");
+      return '0';
+    }
+    i += nLen;
   }
-  return (char)nLen;
+
+  return (char)i;
 }
 
 char read_message(int sockfd_, char *buffer) {
@@ -71,11 +76,17 @@ static void *server_handler(void *arg) {
 }
 
 char force_send(int sockfd, char *buffer, int len) {
-  if (-1 == send(sockfd, buffer, len, 0)) {
-    return 'F';
-  } else {
-    return 'T';
+  int i = 0;
+  size_t flaglen;
+  for (; i <= len;) {
+    flaglen = send(sockfd, buffer, len, 0);
+    if (flaglen < 0) {
+      return 'F';
+    }
+    i += flaglen;
   }
+  fprintf(stdout, "send success\n");
+  return 'T';
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
@@ -173,10 +184,9 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         return 0;
       }
-
       printf("Invalid input\n");
-
       bzero(buffer, 256);
+      fflush(stdin);
       fgets(buffer, 200, stdin);
     }
     pthread_mutex_lock(&input_mode_mtx);
@@ -186,7 +196,6 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
-
     is_input_mode = 0;
 
     /* Send message to the server */
