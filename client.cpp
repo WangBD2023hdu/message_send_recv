@@ -85,6 +85,7 @@ char force_send(int sockfd, char *buffer, int len) {
     }
     i += flaglen;
   }
+  return 'T';
   fprintf(stdout, "send success\n");
   return 'T';
 }
