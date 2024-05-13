@@ -106,9 +106,12 @@ static void *client_handler(void *arg) {
       perror("ERROR opening socket");
       break;
     }
+    fprintf(stdout, "checkout %s %s \n", nick, message);
+    fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
+    fflush(stdout);
     notify_all(nick, (int)ntohl(nick_len), cell);
     notify_all(message, (int)ntohl(message_len), cell);
   }
