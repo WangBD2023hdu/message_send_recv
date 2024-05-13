@@ -6,9 +6,9 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include <signal.h>
 #include <string.h>
-#include <sys/socket.h>
+
+#include <signal.h>
 #define MAX_COUNT_CLIENTS 100
 
 int clients[MAX_COUNT_CLIENTS];
@@ -24,11 +24,11 @@ static inline int reserve_socket_cell() {
     count_active_clients--;
     return -1;
   }
-  int i = 1;
-  while (is_active[i] != '\0' && i < MAX_COUNT_CLIENTS - 1) {
+  int i = 0;
+  while (is_active[i] && i < MAX_COUNT_CLIENTS) {
     ++i;
   }
-  is_active[i] = i;  // TODO
+  is_active[i] = 1;  // TODO
   pthread_mutex_unlock(&mtx);
   return i;
 }
@@ -40,8 +40,8 @@ static inline void free_socket_cell(int cell) {
 
   pthread_mutex_lock(&mtx);
   count_active_clients--;
-  // close(clients[cell]);
-  is_active[cell] = '\0';  // TODO
+  close(clients[cell]);
+  is_active[cell] = 0;  // TODO
   pthread_mutex_unlock(&mtx);
 }
 
@@ -49,40 +49,23 @@ static inline void notify_all(char *buffer, char message_len, int skip) {
   /**
    * send the message to every active client
    */
-  int i = 1;
+  int i = 0;
   int sockfd;
   char flag;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     if (i == skip) continue;
+    pthread_mutex_lock(&mtx);
     flag = is_active[i];
     sockfd = clients[i];
-    if ('\0' != flag) {
-      printf("finsh %d\n", i);
-      if (send(sockfd, &message_len, sizeof(char), 0) == -1) {
-        continue;
+    pthread_mutex_unlock(&mtx);
+    if (flag) {
+      if (send(sockfd, &message_len, sizeof(char), 0) == -1)
         perror("send message len error");
-      }
-      if (send(sockfd, buffer, (int)message_len, 0) == -1) {
-        continue;
+
+      if (send(sockfd, buffer, (int)message_len, 0) == -1)
         perror("send message error");
-      }
     }
   }
-}
-
-char force_read(int sockfd, char *buffer, int len) {
-  int nLen;
-  int i = 0;
-  for (; i < len;) {
-    nLen = (int)recv(sockfd, buffer, len - i, 0);
-    if (nLen < 0) {
-      perror("<socket>is closed\n");
-      return '0';
-    }
-    i += nLen;
-  }
-
-  return (char)i;
 }
 
 static void *client_handler(void *arg) {
@@ -93,86 +76,40 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  char nick_len = 0;
+  char nick_len;
   char message_len;
   bzero(message, 256);
   bzero(nick, 256);
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
-  int reflag;
   while (1) {
-    reflag = 0;
-    int ii = 0;
-    for (; ii < 1;) {
-      reflag = recv(sockfd, &nick_len, sizeof(char), 0);
-      printf("is reading len %d\n", reflag);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive1 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag < 0) {
+    if (recv(sockfd, &nick_len, sizeof(char), 0) <= 0) {
+      free_socket_cell(cell);
+
+      perror("error");
       break;
     }
-    ii = 0;
-    reflag = 0;
-    for (; ii < nick_len;) {
-      reflag = recv(sockfd, nick + reflag, (int)nick_len, 0);
-      printf("is reading  %d\n", reflag);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive2 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag < 0) {
+    if (recv(sockfd, nick, (int)nick_len, 0) <= 0) {
+      free_socket_cell(cell);
+      perror("error");
       break;
     }
-    ii = 0;
-    reflag = 0;
-    for (; ii < 1;) {
-      reflag = recv(sockfd, &message_len, sizeof(char), 0);
-      printf("is reading  mess len %d\n", reflag);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive3 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag < 0) {
+    if (recv(sockfd, &message_len, sizeof(char), 0) <= 0) {
+      free_socket_cell(cell);
+
+      perror("error");
       break;
     }
-    ii = 0;
-    reflag = 0;
-    for (; ii < message_len;) {
-      reflag = recv(sockfd, message + reflag, (int)message_len, 0);
-      printf("is reading  mess%d\n", reflag);
-      if (reflag < 0) {
-        free_socket_cell(cell);
-        fprintf(stdout, "recive4 false");
-        break;
-      }
-      ii += reflag;
-    }
-    if (reflag < 0) {
+    if (recv(sockfd, message, (int)message_len, 0) <= 0) {
+      free_socket_cell(cell);
+      perror("error");
       break;
     }
-    time_t t = time(NULL);
-    struct tm *lt = localtime(&t);
-    printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
-    pthread_mutex_lock(&mtx);
+
     notify_all(nick, nick_len, cell);
     notify_all(message, message_len, cell);
-    pthread_mutex_unlock(&mtx);
   }
-  pthread_mutex_lock(&mtx);
-  close(clients[cell]);
-  pthread_mutex_unlock(&mtx);
   return NULL;
 }
 void handdle(int signal) {
@@ -250,11 +187,10 @@ int main(int argc, char *argv[]) {
     clients[cell] = newsockfd;
     pthread_mutex_unlock(&mtx);
     pthread_t thread_id;
-    int *cell_poniter = (int *)malloc(sizeof(int));
-    *cell_poniter = cell;
-    if (pthread_create(&thread_id, NULL, client_handler,
-                       (void *)(cell_poniter)) != 0) {
-      free(cell_poniter);
+    int *cell_pointer = (int *)malloc(sizeof(int));
+    *cell_pointer = cell;
+    if (pthread_create(&thread_id, NULL, client_handler, cell_pointer) != 0) {
+      free(cell_pointer);
       continue;
     }
 

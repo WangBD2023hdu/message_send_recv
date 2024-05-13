@@ -6,8 +6,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#include <signal.h>
 #include <string.h>
+
 #include <sys/socket.h>
 #include <time.h>
 pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -16,17 +16,12 @@ char is_input_mode;
 
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
-  int i = 0;
-  for (; i < len;) {
-    nLen = (int)recv(sockfd, buffer, len - i, 0);
-    if (nLen < 0) {
-      perror("<socket>is closed\n");
-      return '0';
-    }
-    i += nLen;
+  nLen = (int)recv(sockfd, buffer, len, 0);
+  if (nLen <= 0) {
+    perror("<socket>is closed\n");
+    return '0';
   }
-
-  return (char)i;
+  return (char)nLen;
 }
 
 char read_message(int sockfd_, char *buffer) {
@@ -71,53 +66,38 @@ static void *server_handler(void *arg) {
     struct tm *lt = localtime(&t);
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
   }
-  close(sockfd_);
   return NULL;
 }
 
 char force_send(int sockfd, char *buffer, int len) {
-  int i = 0;
-  size_t flaglen;
-  for (; i <= len;) {
-    flaglen = send(sockfd, buffer, len, 0);
-    if (flaglen < 0) {
-      return 'F';
-    }
-    i += flaglen;
+  if (-1 == send(sockfd, buffer, len, 0)) {
+    return 'F';
+  } else {
+    return 'T';
   }
-  return 'T';
-  fprintf(stdout, "send success\n");
-  return 'T';
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
   char nick_len = strlen(nickname) + 1;
   char text_len = strlen(text) + 1;
   if ('F' == force_send(sockfd, &nick_len, sizeof(char))) {
-    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, nickname, strlen(nickname) + 1)) {
-    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, &text_len, sizeof(char))) {
-    fprintf(stdout, "send 1 false");
     return '0';
   }
   if ('F' == force_send(sockfd, text, strlen(text) + 1)) {
-    fprintf(stdout, "send 1 false");
     return '0';
   }
 
   return '1';  // send message sucess
 }
-void handdle(int signal) {
-  printf("%d", signal);
-  return;
-}
+
 int main(int argc, char *argv[]) {
-  signal(SIGPIPE, handdle);
+  printf("test");
   int sockfd = 0;
   char *nickname = NULL;
   uint16_t portno = 0;
@@ -171,6 +151,7 @@ int main(int argc, char *argv[]) {
   /* Now ask for a message from the user, this message
    * will be read by server
    */
+  printf("work normal");
   pthread_t thread_id;
   if (pthread_create(&thread_id, NULL, server_handler, &sockfd) != 0) {
     perror("ERROR thread create");
@@ -185,11 +166,12 @@ int main(int argc, char *argv[]) {
         close(sockfd);
         return 0;
       }
+
       printf("Invalid input\n");
       bzero(buffer, 256);
-      fflush(stdin);
       fgets(buffer, 200, stdin);
     }
+
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
     pthread_mutex_unlock(&input_mode_mtx);
@@ -197,13 +179,14 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
+    pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 0;
-
+    pthread_mutex_unlock(&input_mode_mtx);
     /* Send message to the server */
 
-    if ('0' == send_message(sockfd, nickname, buffer)) {
+    if (!send_message(sockfd, nickname, buffer)) {
       perror("ERROR writing to socket");
-      break;
+      exit(1);
     }
   }
 
