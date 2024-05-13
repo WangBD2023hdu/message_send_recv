@@ -86,22 +86,22 @@ static void *client_handler(void *arg) {
   pthread_mutex_unlock(&mtx);
   int flag;
   while (1) {
-    if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) < 0) {
+    if ((flag = recv(sockfd, &nick_len, sizeof(int), 0)) <= 0) {
       free_socket_cell(cell);
       perror("ERROR opening socket");
       break;
     }
-    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) < 0) {
+    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) <= 0) {
       free_socket_cell(cell);
       perror("ERROR opening socket");
 
       break;
     }
-    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) < 0) {
+    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
       break;
       perror("ERROR opening socket");
     }
-    if (recv(sockfd, message, (int)ntohl(message_len), 0) < 0) {
+    if (recv(sockfd, message, (int)ntohl(message_len), 0) <= 0) {
       free_socket_cell(cell);
       perror("ERROR opening socket");
       break;

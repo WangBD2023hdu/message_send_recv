@@ -98,7 +98,6 @@ char send_message(int sockfd, char *nickname, char *text) {
 }
 
 int main(int argc, char *argv[]) {
-  printf("test");
   int sockfd = 0;
   char *nickname = NULL;
   uint16_t portno = 0;
