@@ -115,13 +115,14 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
-    if (recv(sockfd, message, (int)ntohl(message_len), 0) <= 0) {
+    if ((flag = recv(sockfd, message, (int)ntohl(message_len), 0)) <= 0) {
       free_socket_cell(cell);
       perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
-            flag);
+    fprintf(stdout, "recv 4f:%d fd:%d flag:%d nick: %s mess %s len %d %d\n",
+            (int)ntohl(nick_len), sockfd, flag, nick, message,
+            (int)strlen(nick) + 1, (int)strlen(message) + 1);
     fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);

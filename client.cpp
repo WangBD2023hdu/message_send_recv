@@ -79,8 +79,8 @@ char force_send(int sockfd, char *buffer, int len) {
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
-  uint32_t nick_len = htonl(strlen(nickname) + 1);
-  uint32_t text_len = htonl(strlen(text) + 1);
+  uint32_t nick_len = htonl((strlen(nickname) + 1));
+  uint32_t text_len = htonl((strlen(text) + 1));
   if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
     return '0';
   }
@@ -179,6 +179,7 @@ int main(int argc, char *argv[]) {
     printf("Please enter the message: ");
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
+
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 0;
     pthread_mutex_unlock(&input_mode_mtx);
