@@ -87,20 +87,17 @@ static void *client_handler(void *arg) {
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
-      printf("%d flag", flag);
       perror("error 1");
 
       break;
     }
     if ((flag = recv(sockfd, nick, (int)nick_len, 0)) < 0) {
       free_socket_cell(cell);
-      printf("%d flag", flag);
       perror("error 2");
       break;
     }
     if ((flag = recv(sockfd, &message_len, sizeof(char), 0)) < 0) {
       free_socket_cell(cell);
-      printf("%d flag", flag);
       perror("error 3");
       break;
     }
