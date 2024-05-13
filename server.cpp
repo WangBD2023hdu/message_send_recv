@@ -195,7 +195,8 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_pointer = (int *)malloc(sizeof(int));
     *cell_pointer = cell;
-    fprintf(stderr, "recv fd b return %d \n", *cell_pointer);
+    fprintf(stderr, "recv fd b return %d  fd %d\n", *cell_pointer,
+            clients[cell]);
     fflush(stdout);
     if (pthread_create(&thread_id, NULL, client_handler, cell_pointer) != 0) {
       free(cell_pointer);
