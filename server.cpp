@@ -126,7 +126,8 @@ static void *client_handler(void *arg) {
     fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
-    printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
+    fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
+            message);
     fflush(stdout);
     pthread_mutex_lock(&mtx);
     notify_all(nick, (int)ntohl(nick_len));
