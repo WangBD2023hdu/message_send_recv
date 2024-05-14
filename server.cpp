@@ -47,7 +47,7 @@ static inline void free_socket_cell(int cell) {
 ssize_t force_send(int sockfd, char *buf, size_t len) {
   for (size_t index = 0; index < len;) {
     int result = send(sockfd, buf + index, len - index, 0);
-    if (result <= 0) {
+    if (result < 0) {
       return -1;
     }
     index += result;
@@ -58,8 +58,10 @@ ssize_t force_send(int sockfd, char *buf, size_t len) {
 ssize_t force_read(int sockfd, char *buf, size_t len) {
   for (size_t index = 0; index < len;) {
     int result = recv(sockfd, buf + index, len - index, 0);
-    if (result <= 0) {
+    if (result < 0) {
       return -1;
+    } else if (result == 0) {
+      fprintf(stdout, "sockfd is closed\n");
     }
     index += result;
   }
@@ -76,7 +78,6 @@ static inline void notify_all(char *buffer, int message_len) {
     if (is_active[i]) {
       if (force_send(clients[i], buffer, message_len) == -1) {
         perror("send message error");
-        close(clients[i]);
         free_socket_cell(i);
       }
     }

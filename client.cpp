@@ -27,8 +27,10 @@ char is_input_mode;
 ssize_t force_read(int sockfd, char *buf, size_t len) {
   for (size_t index = 0; index < len;) {
     int result = recv(sockfd, buf + index, len - index, 0);
-    if (result <= 0) {
+    if (result < 0) {
       return -1;
+    } else if (result == 0) {
+      fprintf(stdout, "sockfd is close\n");
     }
     index += result;
   }
@@ -100,7 +102,7 @@ static void *server_handler(void *arg) {
 ssize_t force_send(int sockfd, char *buf, size_t len) {
   for (size_t index = 0; index < len;) {
     int result = send(sockfd, buf + index, len - index, 0);
-    if (result <= 0) {
+    if (result < 0) {
       return -1;
     }
     index += result;
