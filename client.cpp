@@ -25,7 +25,8 @@ char is_input_mode;
 // }
 
 ssize_t force_read(int sockfd, char *buf, size_t len) {
-  for (size_t index = 0; index < len;) {
+  size_t index = 0;
+  while (index < len) {
     int result = read(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;
@@ -40,7 +41,7 @@ ssize_t force_read(int sockfd, char *buf, size_t len) {
 char read_message(int sockfd_, char *buffer) {
   uint32_t len;
 
-  if ('0' == force_read(sockfd_, (char *)&len, sizeof(uint32_t))) {
+  if ('0' == force_read(sockfd_, (char *)&len, 4)) {
     perror("read head failure");
     return '0';
   }
@@ -103,7 +104,8 @@ static void *server_handler(void *arg) {
 //   }
 // }
 ssize_t force_send(int sockfd, char *buf, size_t len) {
-  for (size_t index = 0; index < len;) {
+  size_t index = 0;
+  while (index < len) {
     int result = write(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;

@@ -52,7 +52,8 @@ static inline void free_socket_cell(int cell) {
   pthread_mutex_unlock(&mtx);
 }
 ssize_t force_send(int sockfd, char *buf, size_t len) {
-  for (size_t index = 0; index < len;) {
+  size_t index = 0;
+  while (index < len) {
     int result = write(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;
@@ -63,7 +64,8 @@ ssize_t force_send(int sockfd, char *buf, size_t len) {
 }
 
 ssize_t force_read(int sockfd, char *buf, size_t len) {
-  for (size_t index = 0; index < len;) {
+  size_t index = 0;
+  while (index < len) {
     int result = read(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;
