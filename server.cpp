@@ -101,12 +101,11 @@ static void *client_handler(void *arg) {
   pthread_mutex_lock(&mtx);
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
-  int flag;
   while (1) {
     if (-1 == force_read(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
       perror("ERROR opening socket");
-      fprintf(stdout, "recv err 1f:%d %d fd:%d flag:%d\n", nick_len,
-              (int)ntohl(nick_len), sockfd, flag);
+      fprintf(stdout, "recv err 1f:%d %d fd:%d\n", nick_len,
+              (int)ntohl(nick_len), sockfd);
       fflush(stdout);
       break;
     }
@@ -119,15 +118,14 @@ static void *client_handler(void *arg) {
       perror("ERROR 3 opening socket");
       break;
     }
-    fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
-            flag);
+    fprintf(stdout, "recv 3f:%d fd:%d \n", (int)ntohl(nick_len), sockfd);
     fflush(stdout);
     if (-1 == force_read(sockfd, message, ntohl(message_len))) {
       perror("ERROR opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d fd:%d flag:%d nick: %s mess %s len %d %d\n",
-            (int)ntohl(message_len), sockfd, flag, nick, message,
+    fprintf(stdout, "recv 4f:%d fd:%d  nick: %s mess %s len %d %d\n",
+            (int)ntohl(message_len), sockfd, nick, message,
             (int)strlen(nick) + 1, (int)strlen(message) + 1);
     fflush(stdout);
     time_t t = time(NULL);
