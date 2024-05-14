@@ -58,7 +58,8 @@ static void *server_handler(void *arg) {
   bzero(nick, 256);
   bzero(message, 256);
   // bzero(body, 256);
-  while (1) {
+  int whi = 1;
+  while (whi) {
     if ('0' == read_message(sockfd_, nick)) {
       perror("socket is closed");
       break;
@@ -85,6 +86,7 @@ static void *server_handler(void *arg) {
     fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
             message);
     fflush(stdout);
+    whi = 0;
   }
   close(sockfd_);
   return NULL;
