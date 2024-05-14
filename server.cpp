@@ -44,29 +44,41 @@ static inline void free_socket_cell(int cell) {
   is_active[cell] = 0;  // TODO
   pthread_mutex_unlock(&mtx);
 }
+ssize_t force_send(int sockfd, char *buf, size_t len) {
+  for (size_t index = 0; index < len;) {
+    int result = send(sockfd, buf + index, len - index, 0);
+    if (result <= 0) {
+      return -1;
+    }
+    index += result;
+  }
+  return 0;
+}
+
+ssize_t force_read(int sockfd, char *buf, size_t len) {
+  for (size_t index = 0; index < len;) {
+    int result = recv(sockfd, buf + index, len - index, 0);
+    if (result <= 0) {
+      return -1;
+    }
+    index += result;
+  }
+  return 0;
+}
 
 static inline void notify_all(char *buffer, int message_len) {
   /**
    * send the message to every active client
    */
   int i = 0;
-  int sockfd;
-  char flag;
-  uint32_t len = htonl(message_len);
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     // if (i == skip) continue;
-
-    flag = is_active[i];
-    sockfd = clients[i];
-
-    if (flag) {
-      fprintf(stdout, "f:%d fd %d", i, sockfd);
-      fflush(stdout);
-      if (send(sockfd, &len, sizeof(uint32_t), 0) == -1)
-        perror("send message len error");
-
-      if (send(sockfd, buffer, message_len, 0) == -1)
+    if (is_active[i]) {
+      if (force_send(clients[i], buffer, message_len) == -1) {
         perror("send message error");
+        close(clients[i]);
+        free_socket_cell(i);
+      }
     }
   }
 }
@@ -90,31 +102,27 @@ static void *client_handler(void *arg) {
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
   int flag;
-  int whi = 1;
-  while (whi) {
-    if ((flag = recv(sockfd, &nick_len, sizeof(uint32_t), 0)) <= 0) {
+  while (1) {
+    if (-1 == force_read(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
       perror("ERROR opening socket");
       fprintf(stdout, "recv err 1f:%d %d fd:%d flag:%d\n", nick_len,
               (int)ntohl(nick_len), sockfd, flag);
       fflush(stdout);
       break;
     }
-    if ((flag = recv(sockfd, nick, ntohl(nick_len), 0)) <= 0) {
+    if (-1 == force_read(sockfd, nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
     }
 
-    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
-      perror("ERROR opening socket");
-      fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
-              sockfd, flag);
-      fflush(stdout);
+    if (-1 == force_read(sockfd, (char *)&message_len, sizeof(uint32_t))) {
+      perror("ERROR 3 opening socket");
       break;
     }
     fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
-    if ((flag = recv(sockfd, message, ntohl(message_len), 0)) <= 0) {
+    if (-1 == force_read(sockfd, message, ntohl(message_len))) {
       perror("ERROR opening socket");
       break;
     }
@@ -128,11 +136,12 @@ static void *client_handler(void *arg) {
             message);
     fflush(stdout);
     pthread_mutex_lock(&mtx);
+    notify_all((char *)&nick_len, sizeof(nick_len));
     notify_all(nick, (int)ntohl(nick_len));
+    notify_all((char *)&message_len, sizeof(message_len));
     notify_all(message, (int)ntohl(message_len));
     // notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
-    whi = 0;
   }
   free_socket_cell(cell);
   return NULL;
