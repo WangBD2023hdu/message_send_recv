@@ -200,12 +200,9 @@ int main(int argc, char *argv[]) {
         return 0;
       }
       flag = 0;
-      break;
       printf("Invalid input\n");
       bzero(buffer, 256);
       fgets(buffer, 200, stdin);
-    }
-    if (flag == 0) {
       break;
     }
     pthread_mutex_lock(&input_mode_mtx);
