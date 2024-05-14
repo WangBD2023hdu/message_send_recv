@@ -19,18 +19,16 @@ pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 
 static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
-  count_active_clients++;
-  if (count_active_clients > MAX_COUNT_CLIENTS) {
-    count_active_clients--;
-    return -1;
+  for (int i = 0; i < MAX_COUNT_CLIENTS; i++) {
+    if (!is_active[i]) {
+      is_active[i] = 1;
+      count_active_clients++;
+      pthread_mutex_unlock(&mtx);
+      return i;
+    }
   }
-  int i = 0;
-  while (is_active[i] && i < MAX_COUNT_CLIENTS) {
-    ++i;
-  }
-  is_active[i] = 1;  // TODO
   pthread_mutex_unlock(&mtx);
-  return i;
+  return -1;
 }
 
 static inline void free_socket_cell(int cell) {
@@ -215,12 +213,13 @@ int main(int argc, char *argv[]) {
     pthread_t thread_id;
     int *cell_pointer = (int *)malloc(sizeof(int));
     *cell_pointer = cell;
-    if (pthread_create(&thread_id, NULL, client_handler, cell_pointer) != 0) {
+    if (pthread_create(&thread_id, NULL, client_handler,
+                       (void *)cell_pointer) != 0) {
       free(cell_pointer);
       continue;
     }
 
-    pthread_detach(thread_id);
+    //
   }
 
   return 0;
