@@ -88,7 +88,6 @@ static void *server_handler(void *arg) {
             message);
     fflush(stdout);
   }
-  close(sockfd_);
   return NULL;
 }
 

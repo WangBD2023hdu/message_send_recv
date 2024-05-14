@@ -62,6 +62,7 @@ ssize_t force_read(int sockfd, char *buf, size_t len) {
       return -1;
     } else if (result == 0) {
       fprintf(stdout, "sockfd is closed\n");
+      fflush(stdout);
     }
     index += result;
   }
