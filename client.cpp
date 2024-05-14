@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   char flag = 1;
-  while (flag) {
+  while (1) {
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
     while (strcmp(buffer, "m\n") != 0) {
@@ -199,7 +199,9 @@ int main(int argc, char *argv[]) {
       bzero(buffer, 256);
       fgets(buffer, 200, stdin);
     }
-
+    if (flag == 0) {
+      break;
+    }
     pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 1;
     pthread_mutex_unlock(&input_mode_mtx);

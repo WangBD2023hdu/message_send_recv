@@ -91,14 +91,14 @@ static void *client_handler(void *arg) {
   pthread_mutex_unlock(&mtx);
   int flag;
   while (1) {
-    if ((flag = recv(sockfd, &nick_len, sizeof(uint32_t), 0)) <= 0) {
+    if ((flag = recv(sockfd, &nick_len, sizeof(uint32_t), 1)) <= 0) {
       perror("ERROR opening socket");
       fprintf(stdout, "recv err 1f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
               sockfd, flag);
       fflush(stdout);
       break;
     }
-    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) <= 0) {
+    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 1)) <= 0) {
       perror("ERROR opening socket");
       fprintf(stdout, "recv 22 f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
               sockfd, flag);
@@ -106,7 +106,7 @@ static void *client_handler(void *arg) {
       break;
     }
 
-    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
+    if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 1)) <= 0) {
       break;
       perror("ERROR opening socket");
       fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
@@ -116,7 +116,7 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
-    if ((flag = recv(sockfd, message, (int)ntohl(message_len), 0)) <= 0) {
+    if ((flag = recv(sockfd, message, (int)ntohl(message_len), 1)) <= 0) {
       perror("ERROR opening socket");
       break;
     }
