@@ -16,7 +16,7 @@ char is_input_mode;
 
 char force_read(int sockfd, char *buffer, int len) {
   int nLen;
-  nLen = (int)recv(sockfd, buffer, len, 0);
+  nLen = (int)recv(sockfd, buffer, (size_t)len, 0);
   if (nLen <= 0) {
     perror("<socket>is closed\n");
     return '0';
@@ -91,7 +91,7 @@ static void *server_handler(void *arg) {
 }
 
 char force_send(int sockfd, char *buffer, int len) {
-  if (-1 == send(sockfd, buffer, len, 0)) {
+  if (-1 == send(sockfd, buffer, (size_t)len, 0)) {
     return 'F';
   } else {
     return 'T';

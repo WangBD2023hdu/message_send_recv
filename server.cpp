@@ -98,11 +98,8 @@ static void *client_handler(void *arg) {
       fflush(stdout);
       break;
     }
-    if ((flag = recv(sockfd, nick, (int)ntohl(nick_len), 0)) <= 0) {
-      perror("ERROR opening socket");
-      fprintf(stdout, "recv 22 f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
-              sockfd, flag);
-      fflush(stdout);
+    if ((flag = recv(sockfd, nick, ntohl(nick_len), 0)) <= 0) {
+      perror("ERROR 2 opening socket");
       break;
     }
 
@@ -116,7 +113,7 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
     fflush(stdout);
-    if ((flag = recv(sockfd, message, (int)ntohl(message_len), 0)) <= 0) {
+    if ((flag = recv(sockfd, message, ntohl(message_len), 0)) <= 0) {
       perror("ERROR opening socket");
       break;
     }
