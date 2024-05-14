@@ -77,15 +77,15 @@ static void *server_handler(void *arg) {
     //   perror("socket is closed");
     //   break;
     // }
-    pthread_mutex_lock(&input_mode_mtx);
-    char flag = is_input_mode;
-    pthread_mutex_unlock(&input_mode_mtx);
-    while (flag) {
-      sleep(1);
-      pthread_mutex_lock(&input_mode_mtx);
-      flag = is_input_mode;
-      pthread_mutex_unlock(&input_mode_mtx);
-    }
+    // pthread_mutex_lock(&input_mode_mtx);
+    // char flag = is_input_mode;
+    // pthread_mutex_unlock(&input_mode_mtx);
+    // while (flag) {
+    //   sleep(1);
+    //   pthread_mutex_lock(&input_mode_mtx);
+    //   flag = is_input_mode;
+    //   pthread_mutex_unlock(&input_mode_mtx);
+    // }
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
