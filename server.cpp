@@ -80,8 +80,8 @@ static void *client_handler(void *arg) {
   char nick[256];
   char message[256];
   char body[256];
-  uint32_t nick_len;
-  uint32_t message_len;
+  uint32_t nick_len = 0;
+  uint32_t message_len = 0;
 
   bzero(message, 256);
   bzero(nick, 256);
@@ -93,8 +93,8 @@ static void *client_handler(void *arg) {
   while (1) {
     if ((flag = recv(sockfd, &nick_len, sizeof(uint32_t), 0)) <= 0) {
       perror("ERROR opening socket");
-      fprintf(stdout, "recv err 1f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
-              sockfd, flag);
+      fprintf(stdout, "recv err 1f:%d %d fd:%d flag:%d\n", nick_len,
+              (int)ntohl(nick_len), sockfd, flag);
       fflush(stdout);
       break;
     }
@@ -107,11 +107,11 @@ static void *client_handler(void *arg) {
     }
 
     if ((flag = recv(sockfd, &message_len, sizeof(uint32_t), 0)) <= 0) {
-      break;
       perror("ERROR opening socket");
       fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len),
               sockfd, flag);
       fflush(stdout);
+      break;
     }
     fprintf(stdout, "recv 3f:%d fd:%d flag:%d\n", (int)ntohl(nick_len), sockfd,
             flag);
