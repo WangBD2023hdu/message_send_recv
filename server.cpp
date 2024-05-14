@@ -54,7 +54,7 @@ static inline void notify_all(char *buffer, int message_len, int skip) {
   char flag;
   uint32_t len = htonl(message_len);
   for (; i < MAX_COUNT_CLIENTS; ++i) {
-    if (i == skip) continue;
+    // if (i == skip) continue;
 
     flag = is_active[i];
     sockfd = clients[i];
