@@ -7,16 +7,25 @@
 #include <unistd.h>
 
 #include <string.h>
+#include <sys/time.h>
 
-#include <signal.h>
 #define MAX_COUNT_CLIENTS 100
 
 int clients[MAX_COUNT_CLIENTS];
 char is_active[MAX_COUNT_CLIENTS];
 int count_active_clients;
-
+char cur_time[30];
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-
+char *current() {
+  memset(cur_time, 0, 30);
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  uint64_t sec = tv.tv_sec;
+  struct tm cur_tm;
+  localtime_r((time_t *)&sec, &cur_tm);
+  snprintf(cur_time, 30, "%02d:%02d", cur_tm.tm_hour, cur_tm.tm_min);
+  return cur_time;
+}
 static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
   for (int i = 0; i < MAX_COUNT_CLIENTS; i++) {
@@ -130,10 +139,15 @@ static void *client_handler(void *arg) {
             message);
     fflush(stdout);
     pthread_mutex_lock(&mtx);
+    char *date = current();
+    uint32_t dateSize = strlen(date);
+    uint32_t net_dateSize = htonl(dateSize);
     notify_all((char *)&nick_len, sizeof(nick_len));
     notify_all(nick, (int)ntohl(nick_len));
     notify_all((char *)&msg_len, sizeof(msg_len));
     notify_all(message, (int)ntohl(msg_len));
+    notify_all((char *)&net_dateSize, sizeof(net_dateSize));
+    notify_all(date, dateSize);
     // notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
   }
