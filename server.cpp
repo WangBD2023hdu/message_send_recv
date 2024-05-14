@@ -90,7 +90,8 @@ static void *client_handler(void *arg) {
   int sockfd = clients[cell];
   pthread_mutex_unlock(&mtx);
   int flag;
-  while (1) {
+  int whi = 1;
+  while (whi) {
     if ((flag = recv(sockfd, &nick_len, sizeof(uint32_t), 0)) <= 0) {
       perror("ERROR opening socket");
       fprintf(stdout, "recv err 1f:%d %d fd:%d flag:%d\n", nick_len,
@@ -131,6 +132,7 @@ static void *client_handler(void *arg) {
     notify_all(message, (int)ntohl(message_len));
     // notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
+    whi = 0;
   }
   free_socket_cell(cell);
   return NULL;
