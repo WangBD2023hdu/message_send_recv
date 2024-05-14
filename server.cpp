@@ -138,12 +138,12 @@ static void *client_handler(void *arg) {
   free_socket_cell(cell);
   return NULL;
 }
-void handdle(int signal) {
-  printf("%d", signal);
-  return;
-}
+// void handdle(int signal) {
+//   printf("%d", signal);
+//   return;
+// }
 int main(int argc, char *argv[]) {
-  signal(SIGPIPE, handdle);
+  // signal(SIGPIPE, handdle);
   int sockfd, newsockfd;
   uint16_t portno;
   unsigned int clilen;
