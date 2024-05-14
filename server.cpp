@@ -93,41 +93,37 @@ static void *client_handler(void *arg) {
   char nick[256];
   char message[256];
   // char body[256];
-  uint32_t nick_len = 0;
-  uint32_t message_len = 0;
 
-  bzero(message, 256);
-  bzero(nick, 256);
   // bzero(body, 256);
-  pthread_mutex_lock(&mtx);
-  int sockfd = clients[cell];
-  pthread_mutex_unlock(&mtx);
+
   while (1) {
-    if (-1 == force_read(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
+    char nicklenbuffer[4];
+    char msglenbuffer[4];
+    bzero(message, 256);
+    bzero(nick, 256);
+    uint32_t nick_len, msg_len;
+    memcpy(&nick_len, nicklenbuffer, 4);
+    if (-1 == force_read(clients[cell], nicklenbuffer, sizeof(uint32_t))) {
       perror("ERROR opening socket");
-      fprintf(stdout, "recv err 1f:%d %d fd:%d\n", nick_len,
-              (int)ntohl(nick_len), sockfd);
-      fflush(stdout);
       break;
     }
-    if (-1 == force_read(sockfd, nick, ntohl(nick_len))) {
+    if (-1 == force_read(clients[cell], nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
     }
 
-    if (-1 == force_read(sockfd, (char *)&message_len, sizeof(uint32_t))) {
+    if (-1 == force_read(clients[cell], msglenbuffer, 4)) {
       perror("ERROR 3 opening socket");
       break;
     }
-    fprintf(stdout, "recv 3f:%d fd:%d \n", (int)ntohl(nick_len), sockfd);
-    fflush(stdout);
-    if (-1 == force_read(sockfd, message, ntohl(message_len))) {
-      perror("ERROR opening socket");
+    memcpy(&msg_len, msglenbuffer, 4);
+    if (-1 == force_read(clients[cell], message, ntohl(msg_len))) {
+      perror("ERROR 4 opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d fd:%d  nick: %s mess %s len %d %d\n",
-            (int)ntohl(message_len), sockfd, nick, message,
-            (int)strlen(nick) + 1, (int)strlen(message) + 1);
+    fprintf(stdout, "recv 4f:%d nick: %s mess %s len %d %d\n",
+            (int)ntohl(msg_len), nick, message, (int)strlen(nick),
+            (int)strlen(message));
     fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
@@ -137,20 +133,16 @@ static void *client_handler(void *arg) {
     pthread_mutex_lock(&mtx);
     notify_all((char *)&nick_len, sizeof(nick_len));
     notify_all(nick, (int)ntohl(nick_len));
-    notify_all((char *)&message_len, sizeof(message_len));
-    notify_all(message, (int)ntohl(message_len));
+    notify_all((char *)&msg_len, sizeof(msg_len));
+    notify_all(message, (int)ntohl(msg_len));
     // notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
   }
   free_socket_cell(cell);
   return NULL;
 }
-// void handdle(int signal) {
-//   printf("%d", signal);
-//   return;
-// }
+
 int main(int argc, char *argv[]) {
-  // signal(SIGPIPE, handdle);
   int sockfd, newsockfd;
   uint16_t portno;
   unsigned int clilen;

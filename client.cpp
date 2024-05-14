@@ -111,8 +111,8 @@ ssize_t force_send(int sockfd, char *buf, size_t len) {
 }
 
 char send_message(int sockfd, char *nickname, char *text) {
-  uint32_t nick_len = htonl((strlen(nickname)));
-  uint32_t text_len = htonl((strlen(text)));
+  uint32_t nick_len = htonl((uint32_t)(strlen(nickname)));
+  uint32_t text_len = htonl((uint32_t)(strlen(text)));
   if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
     return '0';
   }
@@ -217,13 +217,13 @@ int main(int argc, char *argv[]) {
     bzero(buffer, 256);
     fgets(buffer, 200, stdin);
 
-    pthread_mutex_lock(&input_mode_mtx);
     is_input_mode = 0;
-    pthread_mutex_unlock(&input_mode_mtx);
+
     /* Send message to the server */
 
     if (!send_message(sockfd, nickname, buffer)) {
       perror("ERROR writing to socket");
+      close(sockfd);
       exit(1);
     }
   }
