@@ -51,12 +51,13 @@ char read_message(int sockfd_, char *buffer) {
 
 static void *server_handler(void *arg) {
   int sockfd_ = *(int *)arg;
+  free(arg);
   char nick[256];
   char message[256];
-  char body[256];
+  // char body[256];
   bzero(nick, 256);
   bzero(message, 256);
-  bzero(body, 256);
+  // bzero(body, 256);
   while (1) {
     if ('0' == read_message(sockfd_, nick)) {
       perror("socket is closed");
@@ -66,10 +67,10 @@ static void *server_handler(void *arg) {
       perror("socket is closed");
       break;
     }
-    if ('0' == read_message(sockfd_, body)) {
-      perror("socket is closed");
-      break;
-    }
+    // if ('0' == read_message(sockfd_, body)) {
+    //   perror("socket is closed");
+    //   break;
+    // }
     pthread_mutex_lock(&input_mode_mtx);
     char flag = is_input_mode;
     pthread_mutex_unlock(&input_mode_mtx);
@@ -180,10 +181,12 @@ int main(int argc, char *argv[]) {
   /* Now ask for a message from the user, this message
    * will be read by server
    */
-
+  int *fd = (int *)malloc(sizeof(int));
+  *fd = sockfd;
   pthread_t thread_id;
-  if (pthread_create(&thread_id, NULL, server_handler, &sockfd) != 0) {
+  if (pthread_create(&thread_id, NULL, server_handler, fd) != 0) {
     perror("ERROR thread create");
+    free(fd);
     exit(1);
   }
   char flag = 1;
