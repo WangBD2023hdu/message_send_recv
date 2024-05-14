@@ -45,7 +45,7 @@ static inline void free_socket_cell(int cell) {
   pthread_mutex_unlock(&mtx);
 }
 
-static inline void notify_all(char *buffer, int message_len, int skip) {
+static inline void notify_all(char *buffer, int message_len) {
   /**
    * send the message to every active client
    */
@@ -129,9 +129,9 @@ static void *client_handler(void *arg) {
     printf("<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick, message);
     fflush(stdout);
     pthread_mutex_lock(&mtx);
-    notify_all(nick, (int)ntohl(nick_len), cell);
-    notify_all(message, (int)ntohl(message_len), cell);
-    notify_all(body, strlen(body), cell);
+    notify_all(nick, (int)ntohl(nick_len));
+    notify_all(message, (int)ntohl(message_len));
+    notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
   }
   free_socket_cell(cell);
