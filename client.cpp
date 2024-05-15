@@ -60,10 +60,11 @@ static void *server_handler(void *arg) {
   char nick[256];
   char message[256];
   char body[256];
-  bzero(nick, 256);
-  bzero(message, 256);
-  bzero(body, 256);
+
   while (1) {
+    bzero(nick, 256);
+    bzero(message, 256);
+    bzero(body, 256);
     if ('0' == read_message(sockfd_, nick)) {
       perror("socket is closed");
       break;
