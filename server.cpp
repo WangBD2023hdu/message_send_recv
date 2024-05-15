@@ -149,14 +149,18 @@ static void *client_handler(void *arg) {
     uint32_t net_dateSize = htonl(dateSize);
     notify_all((char *)&nick_len, sizeof(nick_len));
     notify_all(nick, (int)ntohl(nick_len));
-
+    fprintf(stdout, "nick send success\n");
+    fflush(stdout);
     notify_all((char *)&msg_len, sizeof(msg_len));
     notify_all(message, (int)ntohl(msg_len));
-
+    fprintf(stdout, "msg send success\n");
+    fflush(stdout);
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
     // notify_all(body, strlen(body));
     pthread_mutex_unlock(&mtx);
+    fprintf(stdout, "data send success\n");
+    fflush(stdout);
   }
   free_socket_cell(cell);
   return NULL;
