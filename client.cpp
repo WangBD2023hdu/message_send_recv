@@ -46,8 +46,6 @@ char read_message(int sockfd_, char *buffer) {
     perror("read head failure");
     return '0';
   }
-  fprintf(stdout, "client recv long %u\n", ntohl(len));
-  fflush(stdout);
   if ('0' == force_read(sockfd_, buffer, (size_t)ntohl(len))) {
     perror("read data failure");
     return '0';

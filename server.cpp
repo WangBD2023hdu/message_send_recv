@@ -90,14 +90,9 @@ static inline void notify_all(char *buffer, int message_len) {
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     // if (i == skip) continue;
     if (is_active[i]) {
-      fprintf(stdout, "cell:%d fd:%d\n", i, clients[i]);
-      fflush(stdout);
       if (force_send(clients[i], buffer, message_len) < 0) {
         perror("send message error");
-        fprintf(stdout, "send err cell:%d fd:%d\n", i, clients[i]);
-        fflush(stdout);
         free_socket_cell(i);
-        fprintf(stdout, "release cell:%d fd:%d\n", i, clients[i]);
       }
     }
   }
@@ -112,10 +107,6 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  // char body[256];
-
-  // bzero(body, 256);
-
   while (1) {
     char nicklenbuffer[4];
     char msglenbuffer[4];
@@ -128,28 +119,19 @@ static void *client_handler(void *arg) {
       break;
     }
     memcpy(&nick_len, nicklenbuffer, 4);
-    fprintf(stdout, "test len: %d\n", ntohl(nick_len));
     if (-1 == force_read(clients[cell], nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
     }
-    fprintf(stdout, "test nick: %s\n", nick);
-    fflush(stdout);
     if (-1 == force_read(clients[cell], msglenbuffer, 4)) {
       perror("ERROR 3 opening socket");
       break;
     }
     memcpy(&msg_len, msglenbuffer, 4);
-    fprintf(stdout, "test msg len: %d\n", ntohl(msg_len));
-    fflush(stdout);
     if (-1 == force_read(clients[cell], message, ntohl(msg_len))) {
       perror("ERROR 4 opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d nick: %s mess %s len %d %d\n",
-            (int)ntohl(msg_len), nick, message, (int)strlen(nick),
-            (int)strlen(message));
-    fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
@@ -161,24 +143,12 @@ static void *client_handler(void *arg) {
     uint32_t net_dateSize = htonl(dateSize);
 
     notify_all(nicklenbuffer, 4);
-    fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
-    fflush(stdout);
     notify_all(nick, (int)strlen(nick));
-    fprintf(stdout, "nick send success\n");
-    fflush(stdout);
     notify_all(msglenbuffer, 4);
     notify_all(message, (int)ntohl(msg_len));
-    fprintf(stdout, "msg send success\n");
-    fflush(stdout);
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
-    // notify_all(body, strlen(body));
-    // pthread_mutex_unlock(&mtx);
-    fprintf(stdout, "data send success\n");
-    fflush(stdout);
   }
-  fprintf(stdout, "finsh\n");
-  fflush(stdout);
   free_socket_cell(cell);
   return NULL;
 }
