@@ -147,11 +147,13 @@ static void *client_handler(void *arg) {
     char *date = current();
     uint32_t dateSize = strlen(date);
     uint32_t net_dateSize = htonl(dateSize);
-    notify_all((char *)&nick_len, sizeof(nick_len));
+    notify_all(nicklenbuffer, 4);
+    fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
+    fflush(stdout);
     notify_all(nick, (int)ntohl(nick_len));
     fprintf(stdout, "nick send success\n");
     fflush(stdout);
-    notify_all((char *)&msg_len, sizeof(msg_len));
+    notify_all(msglenbuffer, 4);
     notify_all(message, (int)ntohl(msg_len));
     fprintf(stdout, "msg send success\n");
     fflush(stdout);
