@@ -53,8 +53,9 @@ static inline void free_socket_cell(int cell) {
 }
 ssize_t force_send(int sockfd, char *buf, size_t len) {
   size_t index = 0;
+  int result;
   while (index < len) {
-    int result = write(sockfd, buf + index, len - index);
+    result = write(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;
     }
@@ -65,8 +66,9 @@ ssize_t force_send(int sockfd, char *buf, size_t len) {
 
 ssize_t force_read(int sockfd, char *buf, size_t len) {
   size_t index = 0;
+  int result;
   while (index < len) {
-    int result = read(sockfd, buf + index, len - index);
+    result = read(sockfd, buf + index, len - index);
     if (result < 0) {
       return -1;
     } else if (result == 0) {
@@ -147,8 +149,10 @@ static void *client_handler(void *arg) {
     uint32_t net_dateSize = htonl(dateSize);
     notify_all((char *)&nick_len, sizeof(nick_len));
     notify_all(nick, (int)ntohl(nick_len));
+
     notify_all((char *)&msg_len, sizeof(msg_len));
     notify_all(message, (int)ntohl(msg_len));
+
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
     // notify_all(body, strlen(body));
