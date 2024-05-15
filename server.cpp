@@ -107,11 +107,13 @@ static void *client_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
+  // char body[256];
   while (1) {
     char nicklenbuffer[4];
     char msglenbuffer[4];
     bzero(message, 256);
     bzero(nick, 256);
+    // bzero(body,256);
     uint32_t nick_len, msg_len;
 
     if (-1 == force_read(clients[cell], nicklenbuffer, 4)) {
@@ -138,17 +140,15 @@ static void *client_handler(void *arg) {
             message);
     fflush(stdout);
 
-    char *date = current();
-    uint32_t dateSize = strlen(date);
-    (void)dateSize;
     // uint32_t net_dateSize = htonl(dateSize);
-
+    char body[] = "this is unused";
+    uint32_t bodylen = htonl(strlen(body));
     notify_all(nicklenbuffer, 4);
     notify_all(nick, (int)strlen(nick));
     notify_all(msglenbuffer, 4);
     notify_all(message, (int)ntohl(msg_len));
-    // notify_all((char *)&net_dateSize, sizeof(net_dateSize));
-    // notify_all(date, dateSize);
+    notify_all((char *)&bodylen, 4);
+    notify_all(body, strlen(body));
   }
   free_socket_cell(cell);
   return NULL;

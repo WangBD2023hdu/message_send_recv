@@ -14,16 +14,6 @@ pthread_mutex_t input_mode_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 char is_input_mode;
 
-// char force_read(int sockfd, char *buffer, int len) {
-//   int nLen;
-//   nLen = (int)recv(sockfd, buffer, (size_t)len, 0);
-//   if (nLen <= 0) {
-//     perror("<socket>is closed\n");
-//     return '0';
-//   }
-//   return (char)nLen;
-// }
-
 ssize_t force_read(int sockfd, char *buf, size_t len) {
   size_t index = 0;
   while (index < len) {
@@ -58,12 +48,11 @@ static void *server_handler(void *arg) {
   free(arg);
   char nick[256];
   char message[256];
-  // char body[256];
-
+  char body[256];
   while (1) {
     bzero(nick, 256);
     bzero(message, 256);
-    // bzero(body, 256);
+    bzero(body, 256);
     if ('0' == read_message(sockfd_, nick)) {
       perror("client socket is closed");
       break;
@@ -72,10 +61,10 @@ static void *server_handler(void *arg) {
       perror("client socket is closed");
       break;
     }
-    // if ('0' == read_message(sockfd_, body)) {
-    //   perror("client socket is closed");
-    //   break;
-    // }
+    if ('0' == read_message(sockfd_, body)) {
+      perror("client socket is closed");
+      break;
+    }
     // if ('0' == read_message(sockfd_, body)) {
     //   perror("socket is closed");
     //   break;
@@ -98,13 +87,6 @@ static void *server_handler(void *arg) {
   return NULL;
 }
 
-// char force_send(int sockfd, char *buffer, int len) {
-//   if (-1 == send(sockfd, buffer, (size_t)len, 0)) {
-//     return 'F';
-//   } else {
-//     return 'T';
-//   }
-// }
 ssize_t force_send(int sockfd, char *buf, size_t len) {
   size_t index = 0;
   while (index < len) {
