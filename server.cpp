@@ -150,6 +150,7 @@ static void *client_handler(void *arg) {
     char *date = current();
     uint32_t dateSize = strlen(date);
     uint32_t net_dateSize = htonl(dateSize);
+    pthread_mutex_lock(&mtx);
     notify_all(nicklenbuffer, 4);
     fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
     fflush(stdout);
@@ -163,7 +164,7 @@ static void *client_handler(void *arg) {
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
     // notify_all(body, strlen(body));
-
+    pthread_mutex_unlock(&mtx);
     fprintf(stdout, "data send success\n");
     fflush(stdout);
   }
