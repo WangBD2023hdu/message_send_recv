@@ -32,11 +32,11 @@ ssize_t force_read(int sockfd, char *buf, size_t len) {
 char read_message(int sockfd_, char *buffer) {
   uint32_t len;
 
-  if ('0' == force_read(sockfd_, (char *)&len, 4)) {
+  if (-1 == force_read(sockfd_, (char *)&len, 4)) {
     perror("read head failure");
     return '0';
   }
-  if ('0' == force_read(sockfd_, buffer, (size_t)ntohl(len))) {
+  if (-1 == force_read(sockfd_, buffer, (size_t)ntohl(len))) {
     perror("read data failure");
     return '0';
   }
