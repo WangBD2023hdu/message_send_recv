@@ -31,7 +31,7 @@ ssize_t force_read(int sockfd, char *buf, size_t len) {
     if (result < 0) {
       return -1;
     } else if (result == 0) {
-      fprintf(stdout, "sockfd is close\n");
+      fprintf(stdout, "client read sockfd is close\n");
     }
     index += result;
   }
@@ -66,15 +66,15 @@ static void *server_handler(void *arg) {
     bzero(message, 256);
     bzero(body, 256);
     if ('0' == read_message(sockfd_, nick)) {
-      perror("socket is closed");
+      perror("client socket is closed");
       break;
     }
     if ('0' == read_message(sockfd_, message)) {
-      perror("socket is closed");
+      perror("client socket is closed");
       break;
     }
     if ('0' == read_message(sockfd_, body)) {
-      perror("socket is closed");
+      perror("client socket is closed");
       break;
     }
     // if ('0' == read_message(sockfd_, body)) {
