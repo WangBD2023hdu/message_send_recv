@@ -16,16 +16,16 @@ char is_active[MAX_COUNT_CLIENTS];
 int count_active_clients;
 char cur_time[30];
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-char *current() {
-  memset(cur_time, 0, 30);
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  uint64_t sec = tv.tv_sec;
-  struct tm cur_tm;
-  localtime_r((time_t *)&sec, &cur_tm);
-  snprintf(cur_time, 30, "%02d:%02d", cur_tm.tm_hour, cur_tm.tm_min);
-  return cur_time;
-}
+// char *current() {
+//   memset(cur_time, 0, 30);
+//   struct timeval tv;
+//   gettimeofday(&tv, NULL);
+//   uint64_t sec = tv.tv_sec;
+//   struct tm cur_tm;
+//   localtime_r((time_t *)&sec, &cur_tm);
+//   snprintf(cur_time, 30, "%02d:%02d", cur_tm.tm_hour, cur_tm.tm_min);
+//   return cur_time;
+// }
 static inline int reserve_socket_cell() {
   pthread_mutex_lock(&mtx);
   for (int i = 0; i < MAX_COUNT_CLIENTS; i++) {
@@ -94,10 +94,7 @@ static inline void notify_all(char *buffer, int message_len) {
       fflush(stdout);
       if (force_send(clients[i], buffer, message_len) < 0) {
         perror("send message error");
-        fprintf(stdout, "send err cell:%d fd:%d\n", i, clients[i]);
-        fflush(stdout);
         free_socket_cell(i);
-        fprintf(stdout, "release cell:%d fd:%d\n", i, clients[i]);
       }
     }
   }
@@ -128,57 +125,38 @@ static void *client_handler(void *arg) {
       break;
     }
     memcpy(&nick_len, nicklenbuffer, 4);
-    fprintf(stdout, "test len: %d\n", ntohl(nick_len));
     if (-1 == force_read(clients[cell], nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
     }
-    fprintf(stdout, "test nick: %s\n", nick);
     fflush(stdout);
     if (-1 == force_read(clients[cell], msglenbuffer, 4)) {
       perror("ERROR 3 opening socket");
       break;
     }
     memcpy(&msg_len, msglenbuffer, 4);
-    fprintf(stdout, "test msg len: %d\n", ntohl(msg_len));
-    fflush(stdout);
     if (-1 == force_read(clients[cell], message, ntohl(msg_len))) {
       perror("ERROR 4 opening socket");
       break;
     }
-    fprintf(stdout, "recv 4f:%d nick: %s mess %s len %d %d\n",
-            (int)ntohl(msg_len), nick, message, (int)strlen(nick),
-            (int)strlen(message));
-    fflush(stdout);
     time_t t = time(NULL);
     struct tm *lt = localtime(&t);
     fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
             message);
     fflush(stdout);
 
-    char *date = current();
-    uint32_t dateSize = strlen(date);
-    uint32_t net_dateSize = htonl(dateSize);
-
+    // char *date = current();
+    // uint32_t dateSize = strlen(date);
+    // uint32_t net_dateSize = htonl(dateSize);
     notify_all(nicklenbuffer, 4);
-    fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
-    fflush(stdout);
     notify_all(nick, (int)strlen(nick));
-    fprintf(stdout, "nick send success\n");
-    fflush(stdout);
     notify_all(msglenbuffer, 4);
     notify_all(message, (int)ntohl(msg_len));
-    fprintf(stdout, "msg send success\n");
-    fflush(stdout);
-    notify_all((char *)&net_dateSize, sizeof(net_dateSize));
-    notify_all(date, dateSize);
+    // notify_all((char *)&net_dateSize, sizeof(net_dateSize));
+    // notify_all(date, dateSize);
     // notify_all(body, strlen(body));
     // pthread_mutex_unlock(&mtx);
-    fprintf(stdout, "data send success\n");
-    fflush(stdout);
   }
-  fprintf(stdout, "finsh\n");
-  fflush(stdout);
   free_socket_cell(cell);
   return NULL;
 }
