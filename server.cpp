@@ -88,7 +88,7 @@ static inline void notify_all(char *buffer, int message_len) {
     if (is_active[i]) {
       if (force_send(clients[i], buffer, message_len) == -1) {
         perror("send message error");
-        free_socket_cell(i);
+        // free_socket_cell(i);
       }
     }
   }
@@ -112,11 +112,12 @@ static void *client_handler(void *arg) {
     bzero(message, 256);
     bzero(nick, 256);
     uint32_t nick_len, msg_len;
-    memcpy(&nick_len, nicklenbuffer, 4);
+
     if (-1 == force_read(clients[cell], nicklenbuffer, sizeof(uint32_t))) {
       perror("ERROR opening socket");
       break;
     }
+    memcpy(&nick_len, nicklenbuffer, 4);
     if (-1 == force_read(clients[cell], nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
