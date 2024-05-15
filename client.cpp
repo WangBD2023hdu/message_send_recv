@@ -122,13 +122,13 @@ ssize_t force_send(int sockfd, char *buf, size_t len) {
 char send_message(int sockfd, char *nickname, char *text) {
   uint32_t nick_len = htonl((uint32_t)(strlen(nickname)));
   uint32_t text_len = htonl((uint32_t)(strlen(text)));
-  if ('F' == force_send(sockfd, (char *)&nick_len, sizeof(uint32_t))) {
+  if ('F' == force_send(sockfd, (char *)&nick_len, 4)) {
     return '0';
   }
   if ('F' == force_send(sockfd, nickname, strlen(nickname))) {
     return '0';
   }
-  if ('F' == force_send(sockfd, (char *)&text_len, sizeof(uint32_t))) {
+  if ('F' == force_send(sockfd, (char *)&text_len, 4)) {
     return '0';
   }
   if ('F' == force_send(sockfd, text, strlen(text))) {
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
     if (!send_message(sockfd, nickname, buffer)) {
       perror("ERROR writing to socket");
-      close(sockfd);
+      // close(sockfd);
       exit(1);
     }
   }
