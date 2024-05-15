@@ -94,7 +94,10 @@ static inline void notify_all(char *buffer, int message_len) {
       fflush(stdout);
       if (send(clients[i], buffer, message_len, 0) <= 0) {
         perror("send message error");
+        fprintf(stdout, "send err cell:%d fd:%d\n", i, clients[i]);
+        fflush(stdout);
         free_socket_cell(i);
+        fprintf(stdout, "release cell:%d fd:%d\n", i, clients[i]);
       }
     }
   }
@@ -156,7 +159,7 @@ static void *client_handler(void *arg) {
     notify_all(nicklenbuffer, 4);
     fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
     fflush(stdout);
-    notify_all(nick, (int)ntohl(nick_len));
+    notify_all(nick, (int)strlen(nick));
     fprintf(stdout, "nick send success\n");
     fflush(stdout);
     notify_all(msglenbuffer, 4);
