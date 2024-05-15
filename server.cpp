@@ -123,11 +123,12 @@ static void *client_handler(void *arg) {
     bzero(nick, 256);
     uint32_t nick_len, msg_len;
 
-    if (-1 == force_read(clients[cell], nicklenbuffer, sizeof(uint32_t))) {
+    if (-1 == force_read(clients[cell], nicklenbuffer, 4)) {
       perror("ERROR opening socket");
       break;
     }
     memcpy(&nick_len, nicklenbuffer, 4);
+    fprintf(stdout, "test len: %d\n", ntohl(nick_len));
     if (-1 == force_read(clients[cell], nick, ntohl(nick_len))) {
       perror("ERROR 2 opening socket");
       break;
