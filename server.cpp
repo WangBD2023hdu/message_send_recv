@@ -140,14 +140,15 @@ static void *client_handler(void *arg) {
 
     char *date = current();
     uint32_t dateSize = strlen(date);
-    uint32_t net_dateSize = htonl(dateSize);
+    (void)dateSize;
+    // uint32_t net_dateSize = htonl(dateSize);
 
     notify_all(nicklenbuffer, 4);
     notify_all(nick, (int)strlen(nick));
     notify_all(msglenbuffer, 4);
     notify_all(message, (int)ntohl(msg_len));
-    notify_all((char *)&net_dateSize, sizeof(net_dateSize));
-    notify_all(date, dateSize);
+    // notify_all((char *)&net_dateSize, sizeof(net_dateSize));
+    // notify_all(date, dateSize);
   }
   free_socket_cell(cell);
   return NULL;
