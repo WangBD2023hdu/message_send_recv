@@ -87,7 +87,10 @@ static inline void notify_all(char *buffer, int message_len) {
   int i = 0;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     // if (i == skip) continue;
+
     if (is_active[i]) {
+      fprintf(stdout, "fd:%d\n", i);
+      fflush(stdout);
       if (force_send(clients[i], buffer, message_len) == -1) {
         perror("send message error");
         free_socket_cell(i);
@@ -143,7 +146,7 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "<%02d:%02d> [%s]:%s", lt->tm_hour, lt->tm_min, nick,
             message);
     fflush(stdout);
-    pthread_mutex_lock(&mtx);
+
     char *date = current();
     uint32_t dateSize = strlen(date);
     uint32_t net_dateSize = htonl(dateSize);
@@ -160,7 +163,7 @@ static void *client_handler(void *arg) {
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
     // notify_all(body, strlen(body));
-    pthread_mutex_unlock(&mtx);
+
     fprintf(stdout, "data send success\n");
     fflush(stdout);
   }
