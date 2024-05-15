@@ -90,7 +90,7 @@ static inline void notify_all(char *buffer, int message_len) {
     if (is_active[i]) {
       if (force_send(clients[i], buffer, message_len) == -1) {
         perror("send message error");
-        // free_socket_cell(i);
+        free_socket_cell(i);
       }
     }
   }
