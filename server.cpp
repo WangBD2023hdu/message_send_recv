@@ -91,7 +91,7 @@ static inline void notify_all(char *buffer, int message_len) {
     if (is_active[i]) {
       fprintf(stdout, "fd:%d\n", i);
       fflush(stdout);
-      if (force_send(clients[i], buffer, message_len) == -1) {
+      if (send(clients[i], buffer, message_len, 0) <= 0) {
         perror("send message error");
         free_socket_cell(i);
       }
