@@ -89,11 +89,10 @@ static inline void notify_all(char *buffer, int message_len) {
   int i = 0;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     // if (i == skip) continue;
-
     if (is_active[i]) {
       fprintf(stdout, "cell:%d fd:%d\n", i, clients[i]);
       fflush(stdout);
-      if (send(clients[i], buffer, message_len, 0) <= 0) {
+      if (force_send(clients[i], buffer, message_len) < 0) {
         perror("send message error");
         fprintf(stdout, "send err cell:%d fd:%d\n", i, clients[i]);
         fflush(stdout);
