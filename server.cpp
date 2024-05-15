@@ -84,6 +84,7 @@ static inline void notify_all(char *buffer, int message_len) {
   /**
    * send the message to every active client
    */
+  pthread_mutex_lock(&mtx);
   int i = 0;
   for (; i < MAX_COUNT_CLIENTS; ++i) {
     // if (i == skip) continue;
@@ -97,6 +98,7 @@ static inline void notify_all(char *buffer, int message_len) {
       }
     }
   }
+  pthread_mutex_unlock(&mtx);
 }
 
 static void *client_handler(void *arg) {
@@ -150,7 +152,7 @@ static void *client_handler(void *arg) {
     char *date = current();
     uint32_t dateSize = strlen(date);
     uint32_t net_dateSize = htonl(dateSize);
-    pthread_mutex_lock(&mtx);
+
     notify_all(nicklenbuffer, 4);
     fprintf(stdout, "nick len send success %d\n", (int)ntohl(nick_len));
     fflush(stdout);
@@ -164,7 +166,7 @@ static void *client_handler(void *arg) {
     notify_all((char *)&net_dateSize, sizeof(net_dateSize));
     notify_all(date, dateSize);
     // notify_all(body, strlen(body));
-    pthread_mutex_unlock(&mtx);
+    // pthread_mutex_unlock(&mtx);
     fprintf(stdout, "data send success\n");
     fflush(stdout);
   }
