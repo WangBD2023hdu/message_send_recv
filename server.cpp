@@ -133,12 +133,15 @@ static void *client_handler(void *arg) {
       perror("ERROR 2 opening socket");
       break;
     }
-
+    fprintf(stdout, "test nick: %s\n", nick);
+    fflush(stdout);
     if (-1 == force_read(clients[cell], msglenbuffer, 4)) {
       perror("ERROR 3 opening socket");
       break;
     }
     memcpy(&msg_len, msglenbuffer, 4);
+    fprintf(stdout, "test msg len: %d\n", ntohl(msg_len));
+    fflush(stdout);
     if (-1 == force_read(clients[cell], message, ntohl(msg_len))) {
       perror("ERROR 4 opening socket");
       break;
