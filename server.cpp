@@ -178,6 +178,8 @@ static void *client_handler(void *arg) {
     fprintf(stdout, "data send success\n");
     fflush(stdout);
   }
+  fprintf(stdout, "finsh\n");
+  fflush(stdout);
   free_socket_cell(cell);
   return NULL;
 }
